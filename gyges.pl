@@ -10,14 +10,14 @@
     1 is first player
     2 is second player
 */
-gyges(Moves):-
+gyges:-
     game([1,e,e,e,e,e,
           e,e,e,e,e,e,
           e,e,e,e,e,e,
           e,e,e,e,e,e,
           e,e,e,e,e,e,
           e,e,e,e,e,e ]
-          , 1, Moves).
+          ,1).
 
 %The id of every slot on the board
 slotsId([
@@ -30,67 +30,114 @@ slotsId([
         ]).
 
 %what player are we?
-curPlayer(1). %this needs to bet set dinamically from C gui
-nextPlayer(2):- curPlayer(1).
-nextPlayer(1):- curPlayer(2).
+aiPlayer(1). %this needs to bet set dinamically from C gui
+nextPlayer(1,2).
+nextPlayer(2,1).
 
 %the current player is max and next min
-max_to_move([P,_,_]):- curPlayer(P).
-min_to_move([P,_,_]):- nextPlayer(P).
+max_to_move([P,_,_]):- aiPlayer(P).
+min_to_move([P,_,_]):- aiPlayer(X),nextPlayer(X,P).
 
 %game states score respectively base on last move
-utility([P, won, _], -1):- curPlayer(P).
-utility([P, won, _], 1):- nextPlayer(P).
+utility([P, won, _], 1):- aiPlayer(X),nextPlayer(X,P).
+utility([P, won, _], -1):- aiPlayer(P).
 
 %Moves, use prolog backtracking to solve for win
-move([X1, play, Board], [X2, win, NextBoard]) :-
-    nextPlayer(X1, X2),
-    move_aux(X1, Board, NextBoard),
-    winPos(X1, NextBoard), !.
+move([X1, play, Board], [X2, won, _]) :-
+    nextPlayer(X1,X2),
+    move_aux(X1, won, _, Board, _), !.
 
 move([X1, play, Board], [X2, play, NextBoard]) :-
-    nextPlayer(X1, X2),
-    move_aux(X1, Board, NextBoard).
+    nextPlayer(X1,X2),
+    move_aux(X1, play,_, Board, NextBoard).
 
-move_aux(P, [0|Bs], [P|Bs]).
+%lvl 1 piece victory conditions
+move_aux(P, won, 2, Board , _):- %position that can obtain victory
+    selectEle(Piece, 2, Board),
+    Piece = 1.
+move_aux(P, won, 3, Board , _):- %position that can obtain victory
+    selectEle(Piece, 3, Board),
+    Piece = 1.
 
-move_aux(P, [B|Bs], [B|B2s]) :-
-    move_aux(P, Bs, B2s).
-
-
+%if Pos hasn't been instanciated start it in 0
+move_aux(P,State,Pos,Board,NextBoard):-
+    var(Pos),
+    move_aux(P,State,0,Board,NextBoard).
+% %move one right
+move_aux(P, play , Pos, Board,AfterMove):-
+    \+ var(Pos),
+    selectEle(1, Pos, Board),
+    updateEle(e, Pos, Board, NewBoard),
+    N1 is Pos + 1,
+    updateEle(1, N1, NewBoard, AfterMove).
+move_aux(P, play , Pos, Board, AfterMove) :-
+    \+ var(Pos),
+    length(Board,L),
+    Pos < L,
+    NextPiece = Pos + 1,
+    move_aux(P, _ , NextPiece, Board, AfterMove).
 
 /*
   MiniMax Relations
 */
-minimax(Pos, BestNextPos, Val) :-                     % Pos has successors
+minimax(Pos, BestNextPos, Val) :-
+    %all posible board moves
     bagof(NextPos, move(Pos, NextPos), NextPosList),
+    %pick the move that can lead to win
     best(NextPosList, BestNextPos, Val), !.
 
-minimax(Pos, _, Val) :-                     % Pos has no successors
+%no next move
+minimax(Pos, _, Val) :-
     utility(Pos, Val).
 
-
+%pick the best scored move from the list of boards
 best([Pos], Pos, Val) :-
     minimax(Pos, _, Val), !.
-
 best([Pos1 | PosList], BestPos, BestVal) :-
     minimax(Pos1, _, Val1),
     best(PosList, Pos2, Val2),
     betterOf(Pos1, Val1, Pos2, Val2, BestPos, BestVal).
 
-
-betterOf(Pos0, Val0, _, Val1, Pos0, Val0) :-   % Pos0 better than Pos1
-    min_to_move(Pos0),                         % MIN to move in Pos0
-    Val0 > Val1, !                             % MAX prefers the greater value
+%compare move value
+betterOf(Pos0, Val0, _, Val1, Pos0, Val0) :-
+    min_to_move(Pos0),
+    Val0 > Val1, !
     ;
-    max_to_move(Pos0),                         % MAX to move in Pos0
-    Val0 < Val1, !.                            % MIN prefers the lesser value
+    max_to_move(Pos0),
+    Val0 < Val1, !.
 
 betterOf(_, _, Pos1, Val1, Pos1, Val1).        % Otherwise Pos1
 
+bestMove(GameState, NextState):-
+  minimax(GameState, NextState,_).
 
+/*
+  AUX Relations
+*/
+/*
+  Get operations on lists
+  @Input
+    element
+    position
+    List
+*/
+selectEle(H, 0, [H|_]).
+selectEle(H,N,[_|T]):-
+  N1 is N - 1,
+  selectEle(H,N1,T).
 
-
+/*
+  Update operations on lists
+  @Input
+    element
+    position
+    List
+    New List
+*/
+updateEle(H, 0, [_|T], [H|T]).
+updateEle(H, N, [X|T], [X|L]):-
+  N1 is N - 1,
+  updateEle(H,N1,T, L).
 
 
 
@@ -119,11 +166,8 @@ betterOf(_, _, Pos1, Val1, Pos1, Val1).        % Otherwise Pos1
 %
 % %Check every move posible
 % move(e,_,_,nil). %if blank slot do nothing*/
-% %move one right
-% move(1, Board,N,AfterMove):-
-%   updateEle(e, N, Board, NewBoard),
-%   N1 is N + 1,
-%   updateEle(1, N1, NewBoard, AfterMove).
+
+
 % /*move one down*/
 % move(1, Board,N,AfterMove):-
 %   updateEle(e, N, Board, NewBoard),
@@ -144,29 +188,4 @@ betterOf(_, _, Pos1, Val1, Pos1, Val1).        % Otherwise Pos1
 % getPieceAux(X, Piece, [Pos|PosL], [_|PieceL]):-
 %     getPieceAux(X,Piece, PosL, PieceL).
 %
-%
-% /*
-%   Get operations on lists
-%   @Input
-%     element
-%     position
-%     List
-% */
-% selectEle(H, 0, [H|_]).
-% selectEle(H,N,[_|T]):-
-%   N1 is N - 1,
-%   selectEle(H,N1,T).
-%
-% /*
-%   Update operations on lists
-%   @Input
-%     element
-%     position
-%     List
-%     New List
-% */
-% updateEle(H, 0, [_|T], [H|T]).
-% updateEle(H, N, [X|T], [X|L]):-
-%   N1 is N - 1,
-%   updateEle(H,N1,T, L).
 %

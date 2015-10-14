@@ -35,81 +35,116 @@ nextPlayer(1,2).
 nextPlayer(2,1).
 
 %the current player is max and next min
-max_to_move([P,_,_]):- aiPlayer(P).
-min_to_move([P,_,_]):- aiPlayer(X),nextPlayer(X,P).
+maxMove([P,_,_]):- aiPlayer(P).
+minMov([P,_,_]):- aiPlayer(X),nextPlayer(X,P).
 
 %game states score respectively base on last move
-utility([P, won, _], 1):- aiPlayer(X),nextPlayer(X,P).
-utility([P, won, _], -1):- aiPlayer(P).
+utility([P, won, _], 2):- aiPlayer(X),nextPlayer(X,P).
+utility([P, won, _], -2):- aiPlayer(P).
+%give a small score for moving, we always have to move
+utility([P, play, _], 1):- aiPlayer(X),nextPlayer(X,P).
+utility([P, play, _], -1):- aiPlayer(P).
 
 %Moves, use prolog backtracking to solve for win
 move([X1, play, Board], [X2, won, _]) :-
     nextPlayer(X1,X2),
-    move_aux(X1, won, _, Board, _), !.
+    moveAux(X1, won, _, Board, _), !.
 
 move([X1, play, Board], [X2, play, NextBoard]) :-
     nextPlayer(X1,X2),
-    move_aux(X1, play,_, Board, NextBoard).
+    moveAux(X1, play,_, Board, NextBoard).
 
 %lvl 1 piece victory conditions
-move_aux(P, won, 2, Board , _):- %position that can obtain victory
+moveAux(P, won, 2, Board , _):- %position that can obtain victory
     selectEle(Piece, 2, Board),
     Piece = 1.
-move_aux(P, won, 3, Board , _):- %position that can obtain victory
+moveAux(P, won, 3, Board , _):- %position that can obtain victory
     selectEle(Piece, 3, Board),
     Piece = 1.
 
 %if Pos hasn't been instanciated start it in 0
-move_aux(P,State,Pos,Board,NextBoard):-
+moveAux(P,State,Pos,Board,NextBoard):-
     var(Pos),
-    move_aux(P,State,0,Board,NextBoard).
-% %move one right
-move_aux(P, play , Pos, Board,AfterMove):-
+    moveAux(P,State,0,Board,NextBoard).
+
+/*One lvl Pieces*/
+%move one right
+moveAux(P, play , Pos, Board,AfterMove):-
     \+ var(Pos),
     selectEle(1, Pos, Board),
     updateEle(e, Pos, Board, NewBoard),
     N1 is Pos + 1,
+    selectEle(MovingTo, N1, Board),
+    MovingTo = e,
     updateEle(1, N1, NewBoard, AfterMove).
-move_aux(P, play , Pos, Board, AfterMove) :-
+%move one left
+moveAux(P, play , Pos, Board,AfterMove):-
+    \+ var(Pos),
+    selectEle(1, Pos, Board),
+    updateEle(e, Pos, Board, NewBoard),
+    N1 is Pos - 1,
+    selectEle(MovingTo, N1, Board),
+    MovingTo = e,
+    updateEle(1, N1, NewBoard, AfterMove).
+%if we land on another piece
+moveAux(P, play , Pos, Board,AfterMove):-
+    \+ var(Pos),
+    selectEle(1, Pos, Board),
+    updateEle(e, Pos, Board, NewBoard),
+    N1 is Pos + 1,
+    selectEle(MovingTo, N1, Board),
+    \+ MovingTo = e,
+    Skip is N1 + MovingTo,
+    updateEle(1, Skip, NewBoard, AfterMove).
+
+moveAux(P, play , Pos, Board, AfterMove) :-
     \+ var(Pos),
     length(Board,L),
     Pos < L,
     NextPiece = Pos + 1,
-    move_aux(P, _ , NextPiece, Board, AfterMove).
+    moveAux(P, _ , NextPiece, Board, AfterMove).
 
 /*
-  MiniMax Relations
+  Min Max
 */
-minimax(Pos, BestNextPos, Val) :-
+minMax(Pos, BestNextPos, Val,Depth) :-
     %all posible board moves
     bagof(NextPos, move(Pos, NextPos), NextPosList),
     %pick the move that can lead to win
-    best(NextPosList, BestNextPos, Val), !.
-
+    best(NextPosList, BestNextPos, Val,Depth), !.
 %no next move
-minimax(Pos, _, Val) :-
+minMax(Pos, _, Val, _) :-
     utility(Pos, Val).
 
 %pick the best scored move from the list of boards
-best([Pos], Pos, Val) :-
-    minimax(Pos, _, Val), !.
-best([Pos1 | PosList], BestPos, BestVal) :-
-    minimax(Pos1, _, Val1),
-    best(PosList, Pos2, Val2),
+best([Pos], Pos, Val,Depth) :-
+    Depth < 1,
+    N1 is Depth + 1,
+    minMax(Pos, _, Val,N1), !.
+%reach max depth case
+best([Pos1 | _], _, Val,Depth):-
+    Depth >= 1,
+    minMax(Pos1, _, Val, Depth).
+best([Pos1 | PosList], BestPos, BestVal,Depth) :-
+    Depth < 1,
+    N1 is Depth + 1,
+    minMax(Pos1, _, Val1,N1),
+    best(PosList, Pos2, Val2,Depth),
     betterOf(Pos1, Val1, Pos2, Val2, BestPos, BestVal).
 
 %compare move value
 betterOf(Pos0, Val0, _, Val1, Pos0, Val0) :-
-    min_to_move(Pos0),
+    minMov(Pos0),
     Val0 > Val1, !
     ;
-    max_to_move(Pos0),
+    maxMove(Pos0),
     Val0 < Val1, !.
+betterOf(_, _, Pos1, Val1, Pos1, Val1).
 
-betterOf(_, _, Pos1, Val1, Pos1, Val1).        % Otherwise Pos1
-
+%given a game state get the best posible next state
 bestMove(GameState, NextState):-
-  minimax(GameState, NextState,_).
+  minMax(GameState, NextState, _, 0). %last arg is tree depth
+
 
 /*
   AUX Relations
@@ -138,54 +173,3 @@ updateEle(H, 0, [_|T], [H|T]).
 updateEle(H, N, [X|T], [X|L]):-
   N1 is N - 1,
   updateEle(H,N1,T, L).
-
-
-
-
-
-
-
-
-
-
-
-
-%
-% /*
-%   Play based on current board situation.
-%   For example if someone won we find out here :)
-% */
-% game(Board, Player, Moves):-
-%   play(Board, Player, Board, Moves,0).
-%
-% play(_,_,_,Moves,35).
-% play(Board, Player, [Piece|PiecesL], [AfterMove|Moves], N):-
-%     move(Piece, Board, N,AfterMove),
-%     N1 is N+1,
-%     play(Board, Player, PiecesL, Moves,N1).
-%
-% %Check every move posible
-% move(e,_,_,nil). %if blank slot do nothing*/
-
-
-% /*move one down*/
-% move(1, Board,N,AfterMove):-
-%   updateEle(e, N, Board, NewBoard),
-%   N6 is N + 6,
-%   updateEle(1, N6, NewBoard, AfterMove).
-%
-% /*
-%   A piece that is related to position X on the Board
-%   where X is the id of the slot as in "slotsId"
-%   Piece is the variable to "solve" for
-% */
-% getPiece(Pos,Piece,Board):-
-%     slotsId(PosL),
-%     getPieceAux(Pos, Piece, PosL, Board).
-%
-% /*this is the piece*/
-% getPieceAux(Pos,Piece,[Pos|_],[Piece|_]).
-% getPieceAux(X, Piece, [Pos|PosL], [_|PieceL]):-
-%     getPieceAux(X,Piece, PosL, PieceL).
-%
-%

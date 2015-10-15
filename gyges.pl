@@ -24,7 +24,7 @@ testBoard([ 1,2,e,e,e,e,
             e,e,e,e,e,e,
             e,e,e,e,e,e,
             e,e,e,e,e,e,
-            1,2,e,e,e,e ]).
+            3,1,2,1,2,3 ]).
 
 
 %what player are we?
@@ -85,15 +85,30 @@ moveAux(P, play , Pos, Board,AfterMove):-
     playOption(Pos,N1,CurEle),
     selectEle(MovingTo, N1, Board),
     \+ MovingTo = e,
-    Skip is N1 + MovingTo,
-    updateEle(CurEle, Skip, NewBoard, AfterMove).
-
+    playOption(N1, Skip, MovingTo),
+    moveOnPiece(CurEle,Skip, NewBoard, AfterMove,0).
 moveAux(P, play , Pos, Board, AfterMove) :-
     \+ var(Pos),
     length(Board,L),
     Pos < L,
     NextPiece = Pos + 1,
     moveAux(P, _ , NextPiece, Board, AfterMove).
+
+%when piece skipping
+moveOnPiece(Piece, Pos, Board, AfterMove,_):-
+    selectEle(MovingTo, Pos, Board),
+    MovingTo = e, %if after we skip it is blank then place
+    updateEle(Piece, MovingTo, Board, AfterMove).
+%loops var so we don't get stuck in a pice skipping loop
+moveOnPiece(Piece, Pos, Board, AfterMove,Loops):-
+    Loops < 5,
+    selectEle(MovingTo, Pos, Board),
+    \+ MovingTo = e, %after skip if it is not blank, skip again
+    playOption(Pos, Skip, MovingTo),
+    NextLoop = Loops + 1,
+    moveOnPiece(Piece,Skip, Board, AfterMove,NextLoop).
+
+
 
 %our posible moves in the list
 playOption(N, N1,Ele):-
@@ -108,6 +123,8 @@ playOption(N, N1,Ele):-
 /*
   Min Max
 */
+depth(X):- X < 3. %change this to change tree depth
+
 minMax(Pos, BestNextPos, Val,Depth) :-
     %all posible board moves
     bagof(NextPos, move(Pos, NextPos), NextPosList),
@@ -119,11 +136,11 @@ minMax(Pos, _, Val, _) :-
 
 %pick the best scored move from the list of boards
 best([Pos], Pos, Val,Depth) :-
-    Depth < 1,
+    depth(Depth),
     N1 is Depth + 1,
     minMax(Pos, _, Val, N1).
 best([Pos1 | PosList], BestPos, BestVal,Depth) :-
-    Depth < 1,
+    depth(Depth),
     N1 is Depth + 1,
     minMax(Pos1, _, Val1,N1),
     best(PosList, Pos2, Val2,Depth),

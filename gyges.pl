@@ -14,19 +14,21 @@ gyges:-
     testBoard(X),
     write('Before Move'),nl,
     printBoard([_,_,X]),
-    bestMove([1,_,X], AfterMove),
+    bestMove([2,_,X], AfterMove),
     write('After Move'),nl,
     printBoard(AfterMove).
 
 %a test board
-testBoard([ 1,e,e,e,e,e,
+testBoard([ e,e,e,e,e,e,
             e,e,e,e,e,e,
             e,e,e,e,e,e,
+            e,1,3,e,e,e,
             e,e,e,e,e,e,
-            e,e,e,e,e,e,
-            e,1,e,e,e,e ]).
+            e,e,e,e,e,e ]).
 
-
+%which side of board each player is on (North/South)
+heaven(2).
+hell(1).
 %what player are we?
 aiPlayer(1). %this needs to bet set dinamically from C gui
 nextPlayer(1,2).
@@ -37,21 +39,21 @@ maxMove([P,_,_]):- aiPlayer(P).
 minMov([P,_,_]):- aiPlayer(X),nextPlayer(X,P).
 
 %game states score respectively base on last move
-score([P, won, _], 2):- aiPlayer(X),nextPlayer(X,P).
-score([P, won, _], -2):- aiPlayer(P).
+score([P, won, _], -2):- aiPlayer(X),nextPlayer(X,P).
+score([P, won, _], 2):- aiPlayer(P).
 %give a small score for moving, we always have to move
-score([P, play, _], 1):- aiPlayer(X),nextPlayer(X,P).
-score([P, play, _], -1):- aiPlayer(P).
+score([P, play, _], -1):- aiPlayer(X),nextPlayer(X,P).
+score([P, play, _], 1):- aiPlayer(P).
 
 %indexes that signify a win
-winningSLot(-3).
-winningSLot(-4).
-winningSLot(38).
-winningSLot(39).
+winningSLot(P,-3):- hell(P).
+winningSLot(P,-4):- hell(P).
+winningSLot(P,38):- heaven(P).
+winningSLot(P,39):- heaven(P).
 
 %Moves, use prolog backtracking to solve for win
-move([X1, play, Board], [X2, won, _]) :-
-    nextPlayer(X1,X2),
+move([X1, play, Board], [X1, won, _]) :-
+    nextPlayer(X1,_),
     moveAux(X1, won, _ , Board, _), !.
 
 move([X1, play, Board], [X2, play, NextBoard]) :-
@@ -61,17 +63,17 @@ move([X1, play, Board], [X2, play, NextBoard]) :-
 %if Pos hasn't been instanciated start it in 0
 moveAux(P,State,Pos,Board,NextBoard):-
     var(Pos),
-    moveAux(P,State,0,Board,NextBoard).
+    loopPieces(P, State,Board,NextBoard).
 %victory condition
 moveAux(P, won, Pos, Board ,_):- %position that can obtain victory
     \+ var(Pos),
     selectEle(CurEle, Pos, Board),
     playOption(Pos,N1,CurEle),
-    winningSLot(N1). %if landed in south or north winning slot
+    winningSLot(P,N1). %if landed in south or north winning slot
 
 /*One lvl Pieces*/
 %move one right
-moveAux(P, play , Pos, Board,AfterMove):-
+moveAux(_, play , Pos, Board,AfterMove):-
     \+ var(Pos),
     selectEle(CurEle, Pos, Board),
     \+ CurEle = e,
@@ -81,7 +83,7 @@ moveAux(P, play , Pos, Board,AfterMove):-
     MovingTo = e,
     updateEle(CurEle, N1, NewBoard, AfterMove).
 %if we land on another piece
-moveAux(P, play , Pos, Board,AfterMove):-
+moveAux(_, play , Pos, Board,AfterMove):-
     \+ var(Pos),
     selectEle(CurEle, Pos, Board),
     \+ CurEle = e,
@@ -91,12 +93,47 @@ moveAux(P, play , Pos, Board,AfterMove):-
     \+ MovingTo = e,
     playOption(N1, Skip, MovingTo),
     moveOnPiece(CurEle,Skip, NewBoard, AfterMove,0).
-moveAux(P, State , Pos, Board, AfterMove) :-
-    \+ var(Pos),
-    length(Board,L),
-    Pos < L,
-    NextPiece = Pos + 1,
-    moveAux(P, State , NextPiece, Board, AfterMove).
+
+loopPieces(P , State, Board, AfterMove) :-
+    heaven(P),%if North player
+    firstNorthRow(Board, Pos),
+    sixMoves(P, State , Pos, Board, AfterMove).
+loopPieces(P , State, Board, AfterMove) :-
+    hell(P),%if North players
+    firstSouthRow(Board, Pos),
+    sixMoves(P, State , Pos, Board, AfterMove).
+
+%evaluate each of the six posible moves in a row
+sixMoves(P, State , Pos, Board, AfterMove):-
+    moveAux(P, State , Pos, Board, AfterMove);
+    moveAux(P, State , Pos+1, Board, AfterMove);
+    moveAux(P, State , Pos+2, Board, AfterMove);
+    moveAux(P, State , Pos+3, Board, AfterMove);
+    moveAux(P, State , Pos+4, Board, AfterMove);
+    moveAux(P, State , Pos+5, Board, AfterMove).
+
+%get pos of first ele in north row with a piece
+firstNorthRow(Board,Pos):-
+    firstNorthRowAux(Board,Pos,0).
+firstNorthRowAux([H|_],Pos,Count):-
+    \+H = e,
+    Pos is (Count div 6) * 6.
+firstNorthRowAux([H|T],Pos,Count):-
+    H = e,
+    Count1 is Count + 1,
+    firstNorthRowAux(T, Pos,Count1).
+%get pos of row with first piece for south
+firstSouthRow(Board,Pos):-
+    reverse(Board,ReversedB),
+    firstSouthRowAux(ReversedB,Pos,35).
+firstSouthRowAux([H|_],Pos,Count):-
+    \+H = e,
+    Pos is (Count div 6) * 6.
+firstSouthRowAux([H|T],Pos,Count):-
+    H = e,
+    Count1 is Count - 1,
+    firstSouthRowAux(T, Pos,Count1).
+
 
 %when piece skipping
 moveOnPiece(Piece, Pos, Board, AfterMove,_):-
@@ -137,7 +174,7 @@ playOption(N, N1,Ele):-
   N1 is N + Move.
 playOption(N, N1,Ele):-
   \+ Ele = 1, %doesn't apply to single lvl pieces
-  N mod 6 < 5, %can't do left L if on first column
+  N mod 6 > 0, %can't do left L if on first column
   Move is  ((Ele-1) * 6) - 1,
   N1 is N + Move.
 playOption(N, N1,Ele):-
@@ -172,7 +209,7 @@ playOption(N, N1,3):- %down left
 /*
   Min Max
 */
-depth(X):- X < 2. %change this to change tree depth
+depth(X):- X < 5. %change this to change tree depth
 
 minMax(Pos, BestNextPos, Val,Depth) :-
     %all posible board moves

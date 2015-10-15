@@ -37,11 +37,11 @@ maxMove([P,_,_]):- aiPlayer(P).
 minMov([P,_,_]):- aiPlayer(X),nextPlayer(X,P).
 
 %game states score respectively base on last move
-utility([P, won, _], 2):- aiPlayer(X),nextPlayer(X,P).
-utility([P, won, _], -2):- aiPlayer(P).
+score([P, won, _], 2):- aiPlayer(X),nextPlayer(X,P).
+score([P, won, _], -2):- aiPlayer(P).
 %give a small score for moving, we always have to move
-utility([P, play, _], 1):- aiPlayer(X),nextPlayer(X,P).
-utility([P, play, _], -1):- aiPlayer(P).
+score([P, play, _], 1):- aiPlayer(X),nextPlayer(X,P).
+score([P, play, _], -1):- aiPlayer(P).
 
 %Moves, use prolog backtracking to solve for win
 move([X1, play, Board], [X2, won, _]) :-
@@ -108,9 +108,8 @@ moveOnPiece(Piece, Pos, Board, AfterMove,Loops):-
     NextLoop = Loops + 1,
     moveOnPiece(Piece,Skip, Board, AfterMove,NextLoop).
 
-
-
 %our posible moves in the list
+%left and right moves
 playOption(N, N1,Ele):-
   Mod is N mod 6, %don't want to go over the edge of the board
   Mod + Ele < 6,
@@ -119,11 +118,57 @@ playOption(N, N1,Ele):-
   Mod is N mod 6, %don't want to go over the edge of the board
   Mod - Ele > 0,
   N1 is N - Ele.
+%up and down moves
+playOption(N, N1,Ele):-
+  Move is  (Ele * 6),
+  N1 is N + Move.
+playOption(N, N1,Ele):-
+  Move is  (Ele * 6),
+  N1 is N - Move.
+%L shaped moves
+playOption(N, N1,Ele):-
+  \+ Ele = 1, %doesn't apply to single lvl pieces
+  N mod 6 < 5, %can't do right L if on last column
+  Move is  ((Ele-1) * 6) + 1,
+  N1 is N + Move.
+playOption(N, N1,Ele):-
+  \+ Ele = 1, %doesn't apply to single lvl pieces
+  N mod 6 < 5, %can't do left L if on first column
+  Move is  ((Ele-1) * 6) - 1,
+  N1 is N + Move.
+playOption(N, N1,Ele):-
+  \+ Ele = 1, %doesn't apply to single lvl pieces
+  Mod is N mod 6,
+  Mod < 5, %can't do right L if on last column
+  Move is  ((Ele-1) * 6) - 1,
+  N1 is N - Move.
+playOption(N, N1,Ele):-
+  \+ Ele = 1, %doesn't apply to single lvl pieces
+  N mod 6 > 0, %can't do left L if on first column
+  Move is  ((Ele-1) * 6) + 1,
+  N1 is N - Move.
+%3 lvl piece only L move
+playOption(N, N1,3):- %up right
+  Mod is N mod 6,
+  Mod < 4,
+  N1 is N - 4.
+playOption(N, N1,3):- %up left
+  Mod is N mod 6,
+  Mod > 1,
+  N1 is N - 8.
+playOption(N, N1,3):- %down right
+  Mod is N mod 6,
+  Mod < 4,
+  N1 is N + 8.
+playOption(N, N1,3):- %down left
+  Mod is N mod 6,
+  Mod > 1,
+  N1 is N + 4.
 
 /*
   Min Max
 */
-depth(X):- X < 3. %change this to change tree depth
+depth(X):- X < 2. %change this to change tree depth
 
 minMax(Pos, BestNextPos, Val,Depth) :-
     %all posible board moves
@@ -132,7 +177,7 @@ minMax(Pos, BestNextPos, Val,Depth) :-
     best(NextPosList, BestNextPos, Val,Depth), !.
 %no next move
 minMax(Pos, _, Val, _) :-
-    utility(Pos, Val).
+    score(Pos, Val).
 
 %pick the best scored move from the list of boards
 best([Pos], Pos, Val,Depth) :-

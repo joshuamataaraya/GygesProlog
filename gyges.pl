@@ -71,31 +71,24 @@ moveAux(P,State,Pos,Board,NextBoard):-
 %move one right
 moveAux(P, play , Pos, Board,AfterMove):-
     \+ var(Pos),
-    selectEle(1, Pos, Board),
+    selectEle(CurEle, Pos, Board),
+    \+ CurEle = e,
     updateEle(e, Pos, Board, NewBoard),
-    N1 is Pos + 1,
+    playOption(Pos,N1,CurEle),
     selectEle(MovingTo, N1, Board),
     MovingTo = e,
-    updateEle(1, N1, NewBoard, AfterMove).
-%move one left
-moveAux(P, play , Pos, Board,AfterMove):-
-    \+ var(Pos),
-    selectEle(1, Pos, Board),
-    updateEle(e, Pos, Board, NewBoard),
-    N1 is Pos - 1,
-    selectEle(MovingTo, N1, Board),
-    MovingTo = e,
-    updateEle(1, N1, NewBoard, AfterMove).
+    updateEle(CurEle, N1, NewBoard, AfterMove).
 %if we land on another piece
 moveAux(P, play , Pos, Board,AfterMove):-
     \+ var(Pos),
-    selectEle(1, Pos, Board),
+    selectEle(CurEle, Pos, Board),
+    \+ CurEle = e,
     updateEle(e, Pos, Board, NewBoard),
-    N1 is Pos + 1,
+    playOption(Pos,N1,CurEle),
     selectEle(MovingTo, N1, Board),
     \+ MovingTo = e,
     Skip is N1 + MovingTo,
-    updateEle(1, Skip, NewBoard, AfterMove).
+    updateEle(CurEle, Skip, NewBoard, AfterMove).
 
 moveAux(P, play , Pos, Board, AfterMove) :-
     \+ var(Pos),
@@ -103,6 +96,12 @@ moveAux(P, play , Pos, Board, AfterMove) :-
     Pos < L,
     NextPiece = Pos + 1,
     moveAux(P, _ , NextPiece, Board, AfterMove).
+
+%our posible moves in the list
+playOption(N, N1,1):- N1 is N + 1.
+playOption(N, N1,1):- N1 is N - 1.
+playOption(N, N1,2):- N1 is N + 2.
+playOption(N, N1,2):- N1 is N - 2.
 
 /*
   Min Max
@@ -120,11 +119,12 @@ minMax(Pos, _, Val, _) :-
 best([Pos], Pos, Val,Depth) :-
     Depth < 1,
     N1 is Depth + 1,
-    minMax(Pos, _, Val,N1), !.
+    minMax(Pos, _, Val, N1).
 %reach max depth case
 best([Pos1 | _], _, Val,Depth):-
-    Depth >= 1,
-    minMax(Pos1, _, Val, Depth).
+    Depth <= 1,
+    N1 is Depth + 1,
+    minMax(Pos1, _, Val, N1).
 best([Pos1 | PosList], BestPos, BestVal,Depth) :-
     Depth < 1,
     N1 is Depth + 1,

@@ -19,12 +19,12 @@ gyges:-
     printBoard(AfterMove).
 
 %a test board
-testBoard([ 1,2,e,e,e,e,
+testBoard([ 1,e,e,e,e,e,
             e,e,e,e,e,e,
             e,e,e,e,e,e,
             e,e,e,e,e,e,
             e,e,e,e,e,e,
-            3,1,2,1,2,3 ]).
+            e,1,e,e,e,e ]).
 
 
 %what player are we?
@@ -43,27 +43,31 @@ score([P, won, _], -2):- aiPlayer(P).
 score([P, play, _], 1):- aiPlayer(X),nextPlayer(X,P).
 score([P, play, _], -1):- aiPlayer(P).
 
+%indexes that signify a win
+winningSLot(-3).
+winningSLot(-4).
+winningSLot(38).
+winningSLot(39).
+
 %Moves, use prolog backtracking to solve for win
 move([X1, play, Board], [X2, won, _]) :-
     nextPlayer(X1,X2),
-    moveAux(X1, won, _, Board, _), !.
+    moveAux(X1, won, _ , Board, _), !.
 
 move([X1, play, Board], [X2, play, NextBoard]) :-
     nextPlayer(X1,X2),
-    moveAux(X1, play,_, Board, NextBoard).
-
-%lvl 1 piece victory conditions
-moveAux(P, won, 2, Board , _):- %position that can obtain victory
-    selectEle(Piece, 2, Board),
-    Piece = 1.
-moveAux(P, won, 3, Board , _):- %position that can obtain victory
-    selectEle(Piece, 3, Board),
-    Piece = 1.
+    moveAux(X1, play, _, Board, NextBoard).
 
 %if Pos hasn't been instanciated start it in 0
 moveAux(P,State,Pos,Board,NextBoard):-
     var(Pos),
     moveAux(P,State,0,Board,NextBoard).
+%victory condition
+moveAux(P, won, Pos, Board ,_):- %position that can obtain victory
+    \+ var(Pos),
+    selectEle(CurEle, Pos, Board),
+    playOption(Pos,N1,CurEle),
+    winningSLot(N1). %if landed in south or north winning slot
 
 /*One lvl Pieces*/
 %move one right
@@ -87,12 +91,12 @@ moveAux(P, play , Pos, Board,AfterMove):-
     \+ MovingTo = e,
     playOption(N1, Skip, MovingTo),
     moveOnPiece(CurEle,Skip, NewBoard, AfterMove,0).
-moveAux(P, play , Pos, Board, AfterMove) :-
+moveAux(P, State , Pos, Board, AfterMove) :-
     \+ var(Pos),
     length(Board,L),
     Pos < L,
     NextPiece = Pos + 1,
-    moveAux(P, _ , NextPiece, Board, AfterMove).
+    moveAux(P, State , NextPiece, Board, AfterMove).
 
 %when piece skipping
 moveOnPiece(Piece, Pos, Board, AfterMove,_):-
@@ -233,7 +237,12 @@ updateEle(H, N, [X|T], [X|L]):-
   updateEle(H,N1,T, L).
 
 %formats the board on screen for testing
-printBoard([_,_,[ A0,A1,A2,A3,A4,A5,
+printBoard([Player,won,_]):-
+  \+ var(Player),
+  write("VICTORY! Player: "),
+  write(Player),
+  write(" Won!"),nl.
+printBoard([_,play,[ A0,A1,A2,A3,A4,A5,
                 B0,B1,B2,B3,B4,B5,
                 C0,C1,C2,C3,C4,C5,
                 D0,D1,D2,D3,D4,D5,

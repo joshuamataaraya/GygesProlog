@@ -11,23 +11,21 @@
     2 is second player
 */
 gyges:-
-    game([1,e,e,e,e,e,
-          e,e,e,e,e,e,
-          e,e,e,e,e,e,
-          e,e,e,e,e,e,
-          e,e,e,e,e,e,
-          e,e,e,e,e,e ]
-          ,1).
+    testBoard(X),
+    write('Before Move'),nl,
+    printBoard([_,_,X]),
+    bestMove([1,_,X], AfterMove),
+    write('After Move'),nl,
+    printBoard(AfterMove).
 
-%The id of every slot on the board
-slotsId([
-          "A0", "A1","A2","A3","A4","A5",
-          "B0", "B1","B2","B3","B4","B5",
-          "C0", "C1","C2","C3","C4","C5",
-          "D0", "D1","D2","D3","D4","D5",
-          "E0", "E1","E2","E3","E4","E5",
-          "F0", "F1","F2","F3","F4","F5"
-        ]).
+%a test board
+testBoard([ 1,2,e,e,e,e,
+            e,e,e,e,e,e,
+            e,e,e,e,e,e,
+            e,e,e,e,e,e,
+            e,e,e,e,e,e,
+            1,2,e,e,e,e ]).
+
 
 %what player are we?
 aiPlayer(1). %this needs to bet set dinamically from C gui
@@ -98,10 +96,14 @@ moveAux(P, play , Pos, Board, AfterMove) :-
     moveAux(P, _ , NextPiece, Board, AfterMove).
 
 %our posible moves in the list
-playOption(N, N1,1):- N1 is N + 1.
-playOption(N, N1,1):- N1 is N - 1.
-playOption(N, N1,2):- N1 is N + 2.
-playOption(N, N1,2):- N1 is N - 2.
+playOption(N, N1,Ele):-
+  Mod is N mod 6, %don't want to go over the edge of the board
+  Mod + Ele < 6,
+  N1 is N + Ele.
+playOption(N, N1,Ele):-
+  Mod is N mod 6, %don't want to go over the edge of the board
+  Mod - Ele > 0,
+  N1 is N - Ele.
 
 /*
   Min Max
@@ -120,11 +122,6 @@ best([Pos], Pos, Val,Depth) :-
     Depth < 1,
     N1 is Depth + 1,
     minMax(Pos, _, Val, N1).
-%reach max depth case
-best([Pos1 | _], _, Val,Depth):-
-    Depth <= 1,
-    N1 is Depth + 1,
-    minMax(Pos1, _, Val, N1).
 best([Pos1 | PosList], BestPos, BestVal,Depth) :-
     Depth < 1,
     N1 is Depth + 1,
@@ -144,7 +141,6 @@ betterOf(_, _, Pos1, Val1, Pos1, Val1).
 %given a game state get the best posible next state
 bestMove(GameState, NextState):-
   minMax(GameState, NextState, _, 0). %last arg is tree depth
-
 
 /*
   AUX Relations
@@ -173,3 +169,53 @@ updateEle(H, 0, [_|T], [H|T]).
 updateEle(H, N, [X|T], [X|L]):-
   N1 is N - 1,
   updateEle(H,N1,T, L).
+
+%formats the board on screen for testing
+printBoard([_,_,[ A0,A1,A2,A3,A4,A5,
+                B0,B1,B2,B3,B4,B5,
+                C0,C1,C2,C3,C4,C5,
+                D0,D1,D2,D3,D4,D5,
+                E0,E1,E2,E3,E4,E5,
+                F0,F1,F2,F3,F4,F5 ]]):-
+  nl,
+  write('   '), write(A0),
+  write(' | '), write(A1),
+  write(' | '), write(A2),
+  write(' | '), write(A3),
+  write(' | '), write(A4),
+  write(' | '), write(A5),nl,
+  write('--------------------------'),nl,
+  write('   '), write(B0),
+  write(' | '), write(B1),
+  write(' | '), write(B2),
+  write(' | '), write(B3),
+  write(' | '), write(B4),
+  write(' | '), write(B5),nl,
+  write('--------------------------'),nl,
+  write('   '), write(C0),
+  write(' | '), write(C1),
+  write(' | '), write(C2),
+  write(' | '), write(C3),
+  write(' | '), write(C4),
+  write(' | '), write(C5),nl,
+  write('--------------------------'),nl,
+  write('   '), write(D0),
+  write(' | '), write(D1),
+  write(' | '), write(D2),
+  write(' | '), write(D3),
+  write(' | '), write(D4),
+  write(' | '), write(D5),nl,
+  write('--------------------------'),nl,
+  write('   '), write(E0),
+  write(' | '), write(E1),
+  write(' | '), write(E2),
+  write(' | '), write(E3),
+  write(' | '), write(E4),
+  write(' | '), write(E5),nl,
+  write('--------------------------'),nl,
+  write('   '), write(F0),
+  write(' | '), write(F1),
+  write(' | '), write(F2),
+  write(' | '), write(F3),
+  write(' | '), write(F4),
+  write(' | '), write(F5),nl.

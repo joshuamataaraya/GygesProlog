@@ -20,11 +20,11 @@ gyges:-
 
 %a test board
 testBoard([ e,e,e,e,e,e,
+            e,e,e,e,1,e,
+            e,e,e,2,e,e,
             e,e,e,e,e,e,
             e,e,e,e,e,e,
-            e,e,e,e,e,e,
-            e,e,e,1,1,e,
-            e,e,e,2,e,e ]):- aiRow([A,B,C,D,E,F]).
+            e,e,e,e,e,e ]):- aiRow([A,B,C,D,E,F]).
 
 %game setup that AI likes
 aiRow([3,1,2,1,2,3]).
@@ -49,14 +49,12 @@ score([P, play, _], -1):- aiPlayer(X),nextPlayer(X,P).
 score([P, play, _], 1):- aiPlayer(P).
 
 %indexes that signify a win
-winningSLot(P,-3):- hell(P).
-winningSLot(P,-4):- hell(P).
-winningSLot(P,38):- heaven(P).
-winningSLot(P,39):- heaven(P).
+winningSLot(P,S):- hell(P), S < 0, S > -6.
+winningSLot(P,S):- heaven(P), S > 35, S < 40.
 
 %Moves, use prolog backtracking to solve for win
-move([Player1, play, Board], [_, won, _]) :-
-    nextPlayer(Player1,_),
+move([Player1, play, Board], [Player2, won, _]) :-
+    nextPlayer(Player1,Player2),
     moveAux(Player1, won, _ , Board, _), !.
 
 move([Player1, play, Board], [Player2, play, NextBoard]) :-
@@ -88,10 +86,9 @@ moveAux(P, State , Pos, Board,AfterMove):-
     selectEle(CurEle, Pos, Board),
     \+ CurEle = e,
     updateEle(e, Pos, Board, NewBoard),
-    playOption(Pos,N1,CurEle,Board,Board),
+    playOption(Pos,N1,CurEle,Board),
     selectEle(MovingTo, N1, Board),
     \+ MovingTo = e,
-    %playOption(N1, Skip, MovingTo),Board,
     moveOnPiece(P,State,CurEle,N1, NewBoard, AfterMove,Pos).
 
 loopPieces(P , State, Board, AfterMove) :-
@@ -144,28 +141,24 @@ moveOnPieceAux(_,play,Piece, Pos, Board, AfterMove,LastPlace):-
     \+ LastPlace = Pos,
     selectEle(e, Pos, Board),%if after we skip it is blank
     updateEle(Piece, Pos, Board, AfterMove).
-moveOnPieceAux(_,won,Piece, Pos, Board, AfterMove,LastPlace):-
+moveOnPieceAux(P,won,_, Pos, _, _,_):-
     winningSLot(P,Pos).
 %loops var so we don't get stuck in a pice skipping loop
 moveOnPiece(P,State,Piece, Pos, Board, AfterMove, LastPlace):-
-    \+LastPlace = Pos,
-    selectEle(MovingTo, Pos, Board),
-    \+ MovingTo = e, %after skip if it is not blank, skip again
-    playOption(Pos, Skip, MovingTo,Board),
-    moveOnPieceAux(P,State,Piece,Skip, Board, AfterMove,LastPlace).
+    moveOnPieceAux(P,State,Piece,Pos, Board, AfterMove,LastPlace).
 moveOnPiece(P,State,Piece, Pos, Board, AfterMove, LastPlace):-
     \+LastPlace = Pos,
     selectEle(MovingTo, Pos, Board),
     \+ MovingTo = e, %after skip if it is not blank, skip again
     playOption(Pos, Skip, MovingTo,Board),
-    movingCorrectDir(P,Skip,Pos),
+    %movingCorrectDir(P,Skip,Pos),
     moveOnPiece(P,State,Piece,Skip, Board, AfterMove,LastPlace).
 
 movingCorrectDir(P,Skip,Pos):-
-  Skip div 6 < Pos div 6,
+  Skip div 6 =< Pos div 6,
   hell(P).
 movingCorrectDir(P,Skip,Pos):-
-  Skip div 6 > Pos div 6,
+  Skip div 6 >= Pos div 6,
   heaven(P).
 
 %our posible moves in the list
@@ -207,44 +200,114 @@ playOption(N, N1,2,Board):-
   selectEle(e,Middle, Board).
 
 %L shaped moves
-playOption(N, N1,Ele,Board):-
-  \+ Ele = 1, %doesn't apply to single lvl pieces
+%2 lvl down
+playOption(N, N1,2,Board):-
   N mod 6 < 5, %can't do right L if on last column
-  Move is  ((Ele-1) * 6) + 1,
-  N1 is N + Move.
-playOption(N, N1,Ele,Board):-
-  \+ Ele = 1, %doesn't apply to single lvl pieces
+  N1 is N + 7,
+  Middle is N + 1,
+  selectEle(e,Middle,Board).
+playOption(N, N1,2,Board):-
+  N mod 6 < 5, %can't do right L if on last column
+  N1 is N + 7,
+  Middle is N + 6,
+  selectEle(e,Middle,Board).
+playOption(N, N1,2,Board):-
   N mod 6 > 0, %can't do left L if on first column
-  Move is  ((Ele-1) * 6) - 1,
-  N1 is N + Move.
-playOption(N, N1,Ele,Board):-
-  \+ Ele = 1, %doesn't apply to single lvl pieces
-  Mod is N mod 6,
-  Mod < 6, %can't do right L if on last column
-  Move is  ((Ele-1) * 6) - 1,
-  N1 is N - Move.
-playOption(N, N1,Ele,Board):-
-  \+ Ele = 1, %doesn't apply to single lvl pieces
+  N1 is N + 5,
+  Middle is N - 1,
+  selectEle(e,Middle,Board).
+playOption(N, N1,2,Board):-
   N mod 6 > 0, %can't do left L if on first column
-  Move is  ((Ele-1) * 6) + 1,
-  N1 is N - Move.
+  N1 is N + 5,
+  Middle is N + 6,
+  selectEle(e,Middle,Board).
+%2 lvl up
+playOption(N, N1,2,Board):-
+  N mod 6 > 0, %can't do right L if on last column
+  N1 is N - 7,
+  Middle is N - 1,
+  selectEle(e,Middle,Board).
+playOption(N, N1,2,Board):-
+  N mod 6 > 0, %can't do right L if on last column
+  N1 is N - 7,
+  Middle is N - 6,
+  selectEle(e,Middle,Board).
+playOption(N, N1,2,Board):-
+  N mod 6 < 5, %can't do left L if on first column
+  N1 is N - 5,
+  Middle is N + 1,
+  selectEle(e,Middle,Board).
+playOption(N, N1,2,Board):-
+  N mod 6 < 5, %can't do left L if on first column
+  N1 is N - 5,
+  Middle is N - 6,
+  selectEle(e,Middle,Board).
+
 %3 lvl piece only L move
 playOption(N, N1,3,Board):- %up right
   Mod is N mod 6,
   Mod < 4,
-  N1 is N - 4.
+  N1 is N - 4,
+  Middle is N + 1,
+  Middle2 is N + 2,
+  selectEle(e,Middle,Board),
+  selectEle(e,Middle2,Board).
+playOption(N, N1,3,Board):- %up right case 2
+  Mod is N mod 6,
+  Mod < 4,
+  N1 is N - 4,
+  Middle is N - 6,
+  Middle2 is N - 5,
+  selectEle(e,Middle,Board),
+  selectEle(e,Middle2,Board).
 playOption(N, N1,3,Board):- %up left
   Mod is N mod 6,
   Mod > 1,
-  N1 is N - 8.
+  N1 is N - 8,
+  Middle is N - 1,
+  Middle2 is N - 2,
+  selectEle(e,Middle,Board),
+  selectEle(e,Middle2,Board).
+playOption(N, N1,3,Board):- %up left case 2
+  Mod is N mod 6,
+  Mod > 1,
+  N1 is N - 8,
+  Middle is N - 7,
+  Middle2 is N - 6,
+  selectEle(e,Middle,Board),
+  selectEle(e,Middle2,Board).
 playOption(N, N1,3,Board):- %down right
   Mod is N mod 6,
   Mod < 4,
-  N1 is N + 8.
+  N1 is N + 8,
+  Middle is N + 1,
+  Middle2 is N + 2,
+  selectEle(e,Middle,Board),
+  selectEle(e,Middle2,Board).
+playOption(N, N1,3,Board):- %down right case 2
+  Mod is N mod 6,
+  Mod < 4,
+  N1 is N + 8,
+  Middle is N + 6,
+  Middle2 is N + 7,
+  selectEle(e,Middle,Board),
+  selectEle(e,Middle2,Board).
 playOption(N, N1,3,Board,Board):- %down left
   Mod is N mod 6,
   Mod > 1,
-  N1 is N + 4.
+  N1 is N + 4,
+  Middle is N - 1,
+  Middle2 is N - 2,
+  selectEle(e,Middle,Board),
+  selectEle(e,Middle2,Board).
+playOption(N, N1,3,Board,Board):- %down left case 2
+  Mod is N mod 6,
+  Mod > 1,
+  N1 is N + 4,
+  Middle is N + 5,
+  Middle2 is N + 6,
+  selectEle(e,Middle,Board),
+  selectEle(e,Middle2,Board).
 
 /*
   Min Max

@@ -13,8 +13,8 @@
 gyges:-
     testBoard(X),
     write('Before Move'),nl,
-    printBoard([_,_,X]),
-    bestMove([2,_,X], AfterMove),
+    printBoard([_,play,X]),
+    bestMove([1,_,X], AfterMove),
     write('After Move'),nl,
     printBoard(AfterMove).
 
@@ -22,9 +22,12 @@ gyges:-
 testBoard([ e,e,e,e,e,e,
             e,e,e,e,e,e,
             e,e,e,e,e,e,
-            e,1,3,e,e,e,
             e,e,e,e,e,e,
-            e,e,e,e,e,e ]).
+            e,e,e,1,1,e,
+            e,e,e,2,e,e ]):- aiRow([A,B,C,D,E,F]).
+
+%game setup that AI likes
+aiRow([3,1,2,1,2,3]).
 
 %which side of board each player is on (North/South)
 heaven(2).
@@ -52,13 +55,13 @@ winningSLot(P,38):- heaven(P).
 winningSLot(P,39):- heaven(P).
 
 %Moves, use prolog backtracking to solve for win
-move([X1, play, Board], [X1, won, _]) :-
-    nextPlayer(X1,_),
-    moveAux(X1, won, _ , Board, _), !.
+move([Player1, play, Board], [_, won, _]) :-
+    nextPlayer(Player1,_),
+    moveAux(Player1, won, _ , Board, _), !.
 
-move([X1, play, Board], [X2, play, NextBoard]) :-
-    nextPlayer(X1,X2),
-    moveAux(X1, play, _, Board, NextBoard).
+move([Player1, play, Board], [Player2, play, NextBoard]) :-
+    nextPlayer(Player1,Player2),
+    moveAux(Player1, play, _, Board, NextBoard).
 
 %if Pos hasn't been instanciated start it in 0
 moveAux(P,State,Pos,Board,NextBoard):-
@@ -68,31 +71,28 @@ moveAux(P,State,Pos,Board,NextBoard):-
 moveAux(P, won, Pos, Board ,_):- %position that can obtain victory
     \+ var(Pos),
     selectEle(CurEle, Pos, Board),
-    playOption(Pos,N1,CurEle),
+    playOption(Pos,N1,CurEle,Board),
     winningSLot(P,N1). %if landed in south or north winning slot
 
-/*One lvl Pieces*/
-%move one right
 moveAux(_, play , Pos, Board,AfterMove):-
     \+ var(Pos),
     selectEle(CurEle, Pos, Board),
     \+ CurEle = e,
     updateEle(e, Pos, Board, NewBoard),
-    playOption(Pos,N1,CurEle),
-    selectEle(MovingTo, N1, Board),
-    MovingTo = e,
+    playOption(Pos,N1,CurEle,Board),
+    selectEle(e, N1, Board),
     updateEle(CurEle, N1, NewBoard, AfterMove).
 %if we land on another piece
-moveAux(_, play , Pos, Board,AfterMove):-
+moveAux(P, State , Pos, Board,AfterMove):-
     \+ var(Pos),
     selectEle(CurEle, Pos, Board),
     \+ CurEle = e,
     updateEle(e, Pos, Board, NewBoard),
-    playOption(Pos,N1,CurEle),
+    playOption(Pos,N1,CurEle,Board,Board),
     selectEle(MovingTo, N1, Board),
     \+ MovingTo = e,
-    playOption(N1, Skip, MovingTo),
-    moveOnPiece(CurEle,Skip, NewBoard, AfterMove,0).
+    %playOption(N1, Skip, MovingTo),Board,
+    moveOnPiece(P,State,CurEle,N1, NewBoard, AfterMove,Pos).
 
 loopPieces(P , State, Board, AfterMove) :-
     heaven(P),%if North player
@@ -106,11 +106,16 @@ loopPieces(P , State, Board, AfterMove) :-
 %evaluate each of the six posible moves in a row
 sixMoves(P, State , Pos, Board, AfterMove):-
     moveAux(P, State , Pos, Board, AfterMove);
-    moveAux(P, State , Pos+1, Board, AfterMove);
-    moveAux(P, State , Pos+2, Board, AfterMove);
-    moveAux(P, State , Pos+3, Board, AfterMove);
-    moveAux(P, State , Pos+4, Board, AfterMove);
-    moveAux(P, State , Pos+5, Board, AfterMove).
+    Pos1 is Pos + 1,
+    moveAux(P, State , Pos1, Board, AfterMove);
+    Pos2 is Pos + 2,
+    moveAux(P, State , Pos2, Board, AfterMove);
+    Pos3 is Pos + 3,
+    moveAux(P, State , Pos3, Board, AfterMove);
+    Pos4 is Pos + 4,
+    moveAux(P, State , Pos4, Board, AfterMove);
+    Pos5 is Pos + 5,
+    moveAux(P, State , Pos5, Board, AfterMove).
 
 %get pos of first ele in north row with a piece
 firstNorthRow(Board,Pos):-
@@ -134,74 +139,109 @@ firstSouthRowAux([H|T],Pos,Count):-
     Count1 is Count - 1,
     firstSouthRowAux(T, Pos,Count1).
 
-
 %when piece skipping
-moveOnPiece(Piece, Pos, Board, AfterMove,_):-
-    selectEle(MovingTo, Pos, Board),
-    MovingTo = e, %if after we skip it is blank then place
-    updateEle(Piece, MovingTo, Board, AfterMove).
+moveOnPieceAux(_,play,Piece, Pos, Board, AfterMove,LastPlace):-
+    \+ LastPlace = Pos,
+    selectEle(e, Pos, Board),%if after we skip it is blank
+    updateEle(Piece, Pos, Board, AfterMove).
+moveOnPieceAux(_,won,Piece, Pos, Board, AfterMove,LastPlace):-
+    winningSLot(P,Pos).
 %loops var so we don't get stuck in a pice skipping loop
-moveOnPiece(Piece, Pos, Board, AfterMove,Loops):-
-    Loops < 5,
+moveOnPiece(P,State,Piece, Pos, Board, AfterMove, LastPlace):-
+    \+LastPlace = Pos,
     selectEle(MovingTo, Pos, Board),
     \+ MovingTo = e, %after skip if it is not blank, skip again
-    playOption(Pos, Skip, MovingTo),
-    NextLoop = Loops + 1,
-    moveOnPiece(Piece,Skip, Board, AfterMove,NextLoop).
+    playOption(Pos, Skip, MovingTo,Board),
+    moveOnPieceAux(P,State,Piece,Skip, Board, AfterMove,LastPlace).
+moveOnPiece(P,State,Piece, Pos, Board, AfterMove, LastPlace):-
+    \+LastPlace = Pos,
+    selectEle(MovingTo, Pos, Board),
+    \+ MovingTo = e, %after skip if it is not blank, skip again
+    playOption(Pos, Skip, MovingTo,Board),
+    movingCorrectDir(P,Skip,Pos),
+    moveOnPiece(P,State,Piece,Skip, Board, AfterMove,LastPlace).
+
+movingCorrectDir(P,Skip,Pos):-
+  Skip div 6 < Pos div 6,
+  hell(P).
+movingCorrectDir(P,Skip,Pos):-
+  Skip div 6 > Pos div 6,
+  heaven(P).
 
 %our posible moves in the list
 %left and right moves
-playOption(N, N1,Ele):-
+playOption(N, N1,1,_):-
   Mod is N mod 6, %don't want to go over the edge of the board
-  Mod + Ele < 6,
-  N1 is N + Ele.
-playOption(N, N1,Ele):-
+  Mod + 1 < 6,
+  N1 is N + 1.
+playOption(N, N1,1,_):-
   Mod is N mod 6, %don't want to go over the edge of the board
-  Mod - Ele > 0,
-  N1 is N - Ele.
+  Mod - 1 > 0,
+  N1 is N - 1.
+%left and right moves
+playOption(N, N1,2,Board):-
+  Mod is N mod 6, %don't want to go over the edge of the board
+  Mod + 2 < 6,
+  N1 is N + 2,
+  Middle is N + 1,
+  selectEle(e, Middle,Board). %if empty spot
+playOption(N, N1,2,Board):-
+  Mod is N mod 6, %don't want to go over the edge of the board
+  Mod - 2 > 0,
+  N1 is N - 2,
+  Middle is N - 1,
+  selectEle(e, Middle,Board). %if empty spot
+
 %up and down moves
-playOption(N, N1,Ele):-
-  Move is  (Ele * 6),
-  N1 is N + Move.
-playOption(N, N1,Ele):-
-  Move is  (Ele * 6),
-  N1 is N - Move.
+playOption(N, N1,1,_):-
+  N1 is N + 6.
+playOption(N, N1,1,_):-
+  N1 is N - 6.
+playOption(N, N1,2,Board):-
+  N1 is N + 12,
+  Middle is N + 6,
+  selectEle(e,Middle, Board).
+playOption(N, N1,2,Board):-
+  N1 is N - 12,
+  Middle is N - 6,
+  selectEle(e,Middle, Board).
+
 %L shaped moves
-playOption(N, N1,Ele):-
+playOption(N, N1,Ele,Board):-
   \+ Ele = 1, %doesn't apply to single lvl pieces
   N mod 6 < 5, %can't do right L if on last column
   Move is  ((Ele-1) * 6) + 1,
   N1 is N + Move.
-playOption(N, N1,Ele):-
+playOption(N, N1,Ele,Board):-
   \+ Ele = 1, %doesn't apply to single lvl pieces
   N mod 6 > 0, %can't do left L if on first column
   Move is  ((Ele-1) * 6) - 1,
   N1 is N + Move.
-playOption(N, N1,Ele):-
+playOption(N, N1,Ele,Board):-
   \+ Ele = 1, %doesn't apply to single lvl pieces
   Mod is N mod 6,
-  Mod < 5, %can't do right L if on last column
+  Mod < 6, %can't do right L if on last column
   Move is  ((Ele-1) * 6) - 1,
   N1 is N - Move.
-playOption(N, N1,Ele):-
+playOption(N, N1,Ele,Board):-
   \+ Ele = 1, %doesn't apply to single lvl pieces
   N mod 6 > 0, %can't do left L if on first column
   Move is  ((Ele-1) * 6) + 1,
   N1 is N - Move.
 %3 lvl piece only L move
-playOption(N, N1,3):- %up right
+playOption(N, N1,3,Board):- %up right
   Mod is N mod 6,
   Mod < 4,
   N1 is N - 4.
-playOption(N, N1,3):- %up left
+playOption(N, N1,3,Board):- %up left
   Mod is N mod 6,
   Mod > 1,
   N1 is N - 8.
-playOption(N, N1,3):- %down right
+playOption(N, N1,3,Board):- %down right
   Mod is N mod 6,
   Mod < 4,
   N1 is N + 8.
-playOption(N, N1,3):- %down left
+playOption(N, N1,3,Board,Board):- %down left
   Mod is N mod 6,
   Mod > 1,
   N1 is N + 4.
@@ -209,7 +249,7 @@ playOption(N, N1,3):- %down left
 /*
   Min Max
 */
-depth(X):- X < 5. %change this to change tree depth
+depth(X):- X < 2. %change this to change tree depth
 
 minMax(Pos, BestNextPos, Val,Depth) :-
     %all posible board moves
@@ -275,7 +315,6 @@ updateEle(H, N, [X|T], [X|L]):-
 
 %formats the board on screen for testing
 printBoard([Player,won,_]):-
-  \+ var(Player),
   write("VICTORY! Player: "),
   write(Player),
   write(" Won!"),nl.

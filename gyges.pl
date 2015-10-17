@@ -1,3 +1,10 @@
+/******************************
+
+
+*******************************/
+
+
+
 %predicates
 /*
   start a game with an board.
@@ -19,12 +26,12 @@ gyges:-
     printBoard(AfterMove).
 
 %a test board
-testBoard([ e,e,e,e,e,e,
-            e,e,e,e,1,e,
-            e,e,e,2,e,e,
+testBoard([ A,B,C,D,E,F,
             e,e,e,e,e,e,
             e,e,e,e,e,e,
-            e,e,e,e,e,e ]):- aiRow([A,B,C,D,E,F]).
+            e,e,e,e,e,e,
+            e,e,e,e,e,e,
+            A,B,C,D,E,F ]):- aiRow([A,B,C,D,E,F]).
 
 %game setup that AI likes
 aiRow([3,1,2,1,2,3]).
@@ -137,28 +144,28 @@ firstSouthRowAux([H|T],Pos,Count):-
     firstSouthRowAux(T, Pos,Count1).
 
 %when piece skipping
-moveOnPieceAux(_,play,Piece, Pos, Board, AfterMove,LastPlace):-
-    \+ LastPlace = Pos,
+moveOnPieceAux(_,play,Piece, Pos, Board, AfterMove):-
     selectEle(e, Pos, Board),%if after we skip it is blank
     updateEle(Piece, Pos, Board, AfterMove).
+moveOnPieceAux(P,play,Piece, Pos, Board, AfterMove):-
+    selectEle(LandedPiece, Pos, Board),%if not blank
+    \+ LandedPiece = e,
+    playOption(Pos, Skip, LandedPiece, Board),
+    movingCorrectDir(P,Skip,Pos),
+    moveOnPieceAux(P,_,Piece, Skip, Board, AfterMove).
 moveOnPieceAux(P,won,_, Pos, _, _,_):-
     winningSLot(P,Pos).
 %loops var so we don't get stuck in a pice skipping loop
 moveOnPiece(P,State,Piece, Pos, Board, AfterMove, LastPlace):-
-    moveOnPieceAux(P,State,Piece,Pos, Board, AfterMove,LastPlace).
-moveOnPiece(P,State,Piece, Pos, Board, AfterMove, LastPlace):-
-    \+LastPlace = Pos,
-    selectEle(MovingTo, Pos, Board),
-    \+ MovingTo = e, %after skip if it is not blank, skip again
-    playOption(Pos, Skip, MovingTo,Board),
-    %movingCorrectDir(P,Skip,Pos),
-    moveOnPiece(P,State,Piece,Skip, Board, AfterMove,LastPlace).
+    \+ LastPlace = Pos,
+    moveOnPieceAux(P,State,Piece,Pos, Board, AfterMove).
+
 
 movingCorrectDir(P,Skip,Pos):-
-  Skip div 6 =< Pos div 6,
+  Skip div 6 < Pos div 6,
   hell(P).
 movingCorrectDir(P,Skip,Pos):-
-  Skip div 6 >= Pos div 6,
+  Skip div 6 > Pos div 6,
   heaven(P).
 
 %our posible moves in the list
@@ -198,6 +205,18 @@ playOption(N, N1,2,Board):-
   N1 is N - 12,
   Middle is N - 6,
   selectEle(e,Middle, Board).
+playOption(N, N1,3,Board):-
+  N1 is N + 18,
+  Middle is N + 6,
+  Middle2 is N + 12,
+  selectEle(e,Middle, Board),
+  selectEle(e,Middle2, Board).
+playOption(N, N1,3,Board):-
+  N1 is N - 18,
+  Middle is N - 6,
+  Middle2 is N - 12,
+  selectEle(e,Middle, Board),
+  selectEle(e,Middle2, Board).
 
 %L shaped moves
 %2 lvl down
@@ -207,38 +226,38 @@ playOption(N, N1,2,Board):-
   Middle is N + 1,
   selectEle(e,Middle,Board).
 playOption(N, N1,2,Board):-
-  N mod 6 < 5, %can't do right L if on last column
+  N mod 6 < 5,
   N1 is N + 7,
   Middle is N + 6,
   selectEle(e,Middle,Board).
 playOption(N, N1,2,Board):-
-  N mod 6 > 0, %can't do left L if on first column
+  N mod 6 > 0,
   N1 is N + 5,
   Middle is N - 1,
   selectEle(e,Middle,Board).
 playOption(N, N1,2,Board):-
-  N mod 6 > 0, %can't do left L if on first column
+  N mod 6 > 0,
   N1 is N + 5,
   Middle is N + 6,
   selectEle(e,Middle,Board).
 %2 lvl up
 playOption(N, N1,2,Board):-
-  N mod 6 > 0, %can't do right L if on last column
+  N mod 6 > 0,
   N1 is N - 7,
   Middle is N - 1,
   selectEle(e,Middle,Board).
 playOption(N, N1,2,Board):-
-  N mod 6 > 0, %can't do right L if on last column
+  N mod 6 > 0,
   N1 is N - 7,
   Middle is N - 6,
   selectEle(e,Middle,Board).
 playOption(N, N1,2,Board):-
-  N mod 6 < 5, %can't do left L if on first column
+  N mod 6 < 5,
   N1 is N - 5,
   Middle is N + 1,
   selectEle(e,Middle,Board).
 playOption(N, N1,2,Board):-
-  N mod 6 < 5, %can't do left L if on first column
+  N mod 6 < 5,
   N1 is N - 5,
   Middle is N - 6,
   selectEle(e,Middle,Board).

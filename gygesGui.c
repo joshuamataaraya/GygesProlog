@@ -4,11 +4,6 @@
 #include <unistd.h>
 #include <string.h>
 
-
-/*
-gcc chessGUI.c -o run `pkg-config --cflags --libs gtk+-2.0`
-*/
-
 //function to get pointer on click event
 GdkWindow*    gdk_window_get_pointer     (GdkWindow       *window,
 					  gint            *x,
@@ -53,11 +48,7 @@ void movePiece(int movPos){
     //remove selected Piece
     for(i = 0; i<12; i++){
         //for bitmap of every piece type
-        guiPiece = *(&whitePawns+i);
-        buffer = guiPiece & selectedPiece;
         if(buffer){//this bitmap has piece
-            *(&whitePawns+i) = guiPiece ^ selectedPiece;
-            pieceMoveBoard = (&whitePawns+i);
             doMove = 1;
             break;
         }
@@ -65,10 +56,7 @@ void movePiece(int movPos){
 
     for(i = 0; i<12; i++){
         //for bitmap of every piece type
-        guiPiece = *(&whitePawns+i);
-        buffer = guiPiece & movPosition;
         if(buffer){//this bitmap has piece
-            *(&whitePawns+i) = guiPiece ^ movPosition;
             break;
         }
     }
@@ -77,7 +65,6 @@ void movePiece(int movPos){
     if(doMove){
         *pieceMoveBoard |= movPosition;
         move();
-    	humanPawnPromotion(); //promote pawn check
     }
     pieceSelected = 0;
 }
@@ -97,10 +84,7 @@ void deletePiece(){
         //remove selected Piece
         for(i = 0; i<12; i++){
             //for bitmap of every piece type
-            guiPiece = *(&whitePawns+i);
-            buffer = guiPiece & selectedPiece;
             if(buffer){//this bitmap has piece
-                *(&whitePawns+i) = guiPiece ^ selectedPiece;
                 break;
             }
         }
@@ -145,50 +129,13 @@ button_press_event(GtkWidget *widget, GdkEventButton *event )
 
 //do a move
 void move(){
-    //parse initial game options
-    //if computer vs computer
-    if(!strcmp(arg1,"-c") && !strcmp(arg2, "-c")){
-        ai(); //computer vs computer game
-        printf("AI Moved\n");
-    //if human vs human
-    }else if(!strcmp(arg1,"-h") && !strcmp(arg2, "-h")){
-        printf("Human Moved\n");
-    }else if(!strcmp(arg1,"-h") && !strcmp(arg2, "-c")){
-        if(aiPlayer ==1){
-            printf("Human Moved\n");
-        }else{
-            ai();
-            printf("Computer Moved\n");
-        }
-    }else if(!strcmp(arg1,"-c") && !strcmp(arg2, "-h")){
-        puts("HERE");
-        if(aiPlayer ==1){
-            ai();
-            printf("Computer Moved\n");
-        }else{
-            printf("Human Moved\n");
-        }
-    }
-
-    //ai to move
     loadLayout();
-    aiPlayer *= -1;
 }
 
 
 //int initGui( int   argc, char *argv[] )
 int main(int argc, char *argv[])
 {
-    //if game settings entered
-    if(argc != 3){
-        printf("%s\n", "Please enter init game flags.\n"
-        "Ex: \"./Chess -h -c\"");
-        return 0;
-    }
-
-    arg1 = argv[1];
-    arg2 = argv[2];
-    aiPlayer = 1;
 
 	//get running dir put in swd
    	getcwd(path, sizeof(path));
@@ -281,17 +228,15 @@ void addPiecesGui(){
     for(i = 0; i<64; i++){
         board[i] = 0;
     }
-    //copy over current bitMaps to temp vars
-    long long guiPiece = whitePawns;
 
     //add all pieces to board from bitmaps
     for(i = 0; i<12; i++){
             //for bitmap of every piece type
-            guiPiece = *(&whitePawns+i);
             //check for a bit on
             long long bitChecker = 0x1;
         for(j = 0; j<64;j++){
-            int pieceHere = (bitChecker & guiPiece) == 0 ? 0:1;
+			//if piece here
+            int pieceHere;
             if(pieceHere)
                 //asign piece type
                 board[j] = i + 1;

@@ -1,5 +1,30 @@
 /******************************
+Estudiante: Seth Michael Stalley - 2014159915
+Curso: Lenguajes de Programacion
+Profesor: Kirstein Gatjens
+Periodo: II Semestre, 2015
+TAREA: IA de Gyges
+*****************
 
+Manual Usuario:
++Este archivo tiene las reglas de juego y algoritmos minMax
+-para las jugadas del ai. Para la realizacion de pruebas
+-se recomienda correr la relacion "gyges" este tomara la tabla
+-"testBoard" y lo relacionara con el jugador 1 o 2
+-indicado en linea 50 y asi buscara la mejor jugada. Entonces
+-para simular posiciones recomienda editar el "testBoard"
+
++Se define cual jugador es "cielo" o "infierno" en las relaciones
+- "heaven" y "hell"
+
+
+Analisis de Resultados:
++IA completo con reglas validos de juego: A
++Docu interno: A
+
+Nota: Se implementara el "retorno" de los movimientos
+realizados en C cuando se realiza la segunda parte de esta tarea.
+(Kirstein nos dio permiso para hacer dicho)
 
 *******************************/
 
@@ -21,6 +46,7 @@ gyges:-
     testBoard(X),
     write('Before Move'),nl,
     printBoard([_,play,X]),
+    %edit this number to change player
     bestMove([1,_,X], AfterMove),
     write('After Move'),nl,
     printBoard(AfterMove).
@@ -33,7 +59,7 @@ testBoard([ A,B,C,D,E,F,
             e,e,e,e,e,e,
             A,B,C,D,E,F ]):- aiRow([A,B,C,D,E,F]).
 
-%game setup that AI likes
+%a game setup that our AI likes
 aiRow([3,1,2,1,2,3]).
 
 %which side of board each player is on (North/South)

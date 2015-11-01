@@ -152,7 +152,7 @@ firstNorthRow(Board,Pos):-
     firstNorthRowAux(Board,Pos,0).
 firstNorthRowAux([H|_],Pos,Count):-
     \+H = e,
-    Pos is (Count div 6) * 6.
+    Pos is (Count // 6) * 6.
 firstNorthRowAux([H|T],Pos,Count):-
     H = e,
     Count1 is Count + 1,
@@ -163,7 +163,7 @@ firstSouthRow(Board,Pos):-
     firstSouthRowAux(ReversedB,Pos,35).
 firstSouthRowAux([H|_],Pos,Count):-
     \+H = e,
-    Pos is (Count div 6) * 6.
+    Pos is (Count // 6) * 6.
 firstSouthRowAux([H|T],Pos,Count):-
     H = e,
     Count1 is Count - 1,
@@ -188,10 +188,10 @@ moveOnPiece(P,State,Piece, Pos, Board, AfterMove, LastPlace):-
 
 
 movingCorrectDir(P,Skip,Pos):-
-  Skip div 6 < Pos div 6,
+  Skip // 6 < Pos // 6,
   hell(P).
 movingCorrectDir(P,Skip,Pos):-
-  Skip div 6 > Pos div 6,
+  Skip // 6 > Pos // 6,
   heaven(P).
 
 %our posible moves in the list

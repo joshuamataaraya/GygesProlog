@@ -136,8 +136,18 @@ void move(){
 //int initGui( int   argc, char *argv[] )
 int main(int argc, char *argv[])
 {
+	//Example Prolog call
+	WamWord arg[10];
+	int arity = 0, result, nbSol=0;
 
+  	Start_Prolog(argc, argv);
+	int functor = Find_Atom("gyges");
 
+  	Pl_Query_Begin(TRUE);
+	arg[0] = Mk_Variable();
+  	result = Pl_Query_Call(functor, arity, arg);
+	Pl_Query_End(PL_RECOVER);
+	Stop_Prolog();
 
 	//get running dir put in swd
    	getcwd(path, sizeof(path));

@@ -6,7 +6,7 @@ OBJECTS = gygesGui.o gyges.o
 all: gyges
 
 gygesGui.o:
-	$(CC) -c gygesGui.c -o gygesGui.o -C '$(GTK_CFLAGS)'
+	$(CC) -c gygesGui.h gygesGui.c -o gygesGui.o -C '$(GTK_CFLAGS)'
 
 gyges.o:
 	$(CC) -c gyges.pl -o gyges.o

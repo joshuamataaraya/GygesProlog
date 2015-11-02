@@ -42,14 +42,17 @@ realizados en C cuando se realiza la segunda parte de esta tarea.
     1 is first player
     2 is second player
 */
-gyges:-
+boardList([_,_,Y],Y).
+
+gyges(Y):-
     testBoard(X),
     write('Before Move'),nl,
     printBoard([_,play,X]),
     %edit this number to change player
     bestMove([1,_,X], AfterMove),
     write('After Move'),nl,
-    printBoard(AfterMove).
+    printBoard(AfterMove),
+    boardList(AfterMove,Y).
 
 %a test board
 testBoard([ A,B,C,D,E,F,

@@ -1,37 +1,51 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-
-#include "gprolog.h"
-#include <gtk/gtk.h>
+#include "gygesGui.h"
 
 
-//function to get pointer on click event
-GdkWindow*    gdk_window_get_pointer     (GdkWindow       *window,
-					  gint            *x,
-					  gint            *y,
-					  GdkModifierType *mask);
+//int initGui( int   argc, char *argv[] )
+int main(int argc, char *argv[])
+{
+	//Example Prolog call
+	WamWord arg[10];
+	int nbSol, i; i = nbSol = 0;
+	WamWord *sol;
 
-int board[36];
-static GtkWidget *window;
-GtkWidget *layout;
-GtkWidget *image;
-GtkWidget *button, *bMove, *delete; //butons
-GtkEntry* entry;
-char path[1024]; //img folder path
-char tempPath[1024];
-int gameOver = 0;
+  	Start_Prolog(argc, argv);
+  	Pl_Query_Begin(TRUE);
+	arg[0] = Mk_Variable();
+  	Pl_Query_Call(Find_Atom("gyges"), 1, arg);
+
+	PlTerm list = arg[0];
+	char piece;
+	for(i = 0; i< List_Length(arg[0]);i++){
+		sol = Rd_List(list);
+		piece = Rd_Char(*sol);
+		if(piece != BLANK)
+			piece += '0';
+		printf("%c\t%d\n",piece,i);
+		list = sol[1];
+	}
+	Pl_Query_End(PL_RECOVER);
+	Stop_Prolog();
+
+	//get running dir put in swd
+   	getcwd(path, sizeof(path));
+	strcat(path, "/img/");
+
+    //LOAD GUI
+	gtk_init(&argc, &argv);
+   	createWindow();
+
+	loadLayout();
+
+    //close on exit
+    g_signal_connect_swapped(G_OBJECT(window), "destroy",
+        G_CALLBACK(gtk_main_quit), NULL);
 
 
-void addPiecesGui();
-static void addLabels();
-void createWindow();
-void loadLayout();
-void move();
-void deletePiece();
+    gtk_main ();
 
-int pieceSelected = 0;
+    return 0;
+}
 
 
 void movePiece(int movPos){
@@ -133,41 +147,6 @@ void move(){
 }
 
 
-//int initGui( int   argc, char *argv[] )
-int main(int argc, char *argv[])
-{
-	//Example Prolog call
-	WamWord arg[10];
-	int arity = 0, result, nbSol=0;
-
-  	Start_Prolog(argc, argv);
-	int functor = Find_Atom("gyges");
-
-  	Pl_Query_Begin(TRUE);
-	arg[0] = Mk_Variable();
-  	result = Pl_Query_Call(functor, arity, arg);
-	Pl_Query_End(PL_RECOVER);
-	Stop_Prolog();
-
-	//get running dir put in swd
-   	getcwd(path, sizeof(path));
-	strcat(path, "/img/");
-
-    //LOAD GUI
-	gtk_init(&argc, &argv);
-   	createWindow();
-
-	loadLayout();
-
-    //close on exit
-    g_signal_connect_swapped(G_OBJECT(window), "destroy",
-        G_CALLBACK(gtk_main_quit), NULL);
-
-
-    gtk_main ();
-
-    return 0;
-}
 
 void createWindow(){
     //create new window

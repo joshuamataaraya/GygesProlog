@@ -46,6 +46,7 @@ void siguienteJugada(){
 	Pl_Query_Begin(TRUE);
 	arg[0]=Mk_Variable();
 	Pl_Query_Call(Find_Atom("testBoard"), 1, arg); //this is to initialize the board
+	Pl_Query_End(PL_RECOVER);
 
 	PlTerm list = arg[0];
 	char piece;
@@ -60,34 +61,34 @@ void siguienteJugada(){
 		list = sol[1];
 	}
 
-
-	PlTerm list2[36];
+	Pl_Query_Begin(TRUE);
+	PlTerm list2[2];
 	for(i=0; i<36;i++){
-		if(board[i]!=BLANK){
-			piece=board[i]-'0';
-		}
-		list2[i]= Mk_Char(piece);
+		piece = board[i];
+		list2[0] = piece == BLANK ? Mk_Char('e') : Mk_Integer(piece-'0');
+
+		list2[1] = Mk_List(list2);
 	}
+
 	arg[0] = Mk_Variable();
-	arg[1] = Mk_List(list2);
+	arg[1] = list2[1];
 	arg[2] = Mk_Number(1);
 	Pl_Query_Call(Find_Atom("gyges"), 3, arg);
-	printf("here\n");
 
 	list = arg[0];
-	char res[List_Length(arg[0])];
-	printf("%d\n",List_Length(arg[0]));
+	int length = List_Length(arg[0]);
+	char res[length];
+	printf("%d\n",length);
 	for(i = 0; i< List_Length(arg[0]);i++){
 		sol = Rd_List(list);
 		piece = Rd_Char(*sol);
 		if(piece != BLANK){
 			piece += '0';
 		}
-		printf("%c\t%d\n",piece,i);
 		board[i]=piece;
 		list = sol[1];
 	}
-	printf("%s",board);
+
 	Pl_Query_End(PL_RECOVER);
 	Stop_Prolog();
 }

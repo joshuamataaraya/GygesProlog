@@ -56,17 +56,15 @@ void siguienteJugada(){
 	}
 
 	Pl_Query_Begin(TRUE);
-	PlTerm list2[2];
+	PlTerm list2[36];
 	for(i=0; i<36;i++){
-		piece = board[i];
-		list2[0] = piece == BLANK ? Mk_Char('e') : Mk_Integer(piece-'0');
-
-		list2[1] = Mk_List(list2);
+		list2[i] = board[i] == BLANK ?
+			Mk_Char(board[i]) : Mk_Integer(board[i] - '0');
 	}
 
 	arg[0] = Mk_Variable();
-	arg[1] = list2[1];
-	arg[2] = Mk_Number(1);
+	arg[1] = Mk_Number(1);
+	arg[2] = Mk_Proper_List(36,list2);
 	Pl_Query_Call(Find_Atom("gyges"), 3, arg);
 
 	list = arg[0];

@@ -44,14 +44,13 @@ realizados en C cuando se realiza la segunda parte de esta tarea.
 */
 boardList([_,_,Y],Y).
 
-gyges(Y,Board,Player):-
+gyges(Y,Player,Board):-
     write('Before Move'),nl,
     %printBoard([_,play,Board]),
     %edit this number to change player
     write(Board),nl,
     bestMove([Player,_,Board], AfterMove),
     write('After Move'),nl,
-
     boardList(AfterMove,Y),
     write(Y).
 

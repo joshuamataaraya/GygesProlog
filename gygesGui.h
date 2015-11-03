@@ -26,3 +26,4 @@ void loadLayout();
 void move();
 void deletePiece();
 void siguienteJugada();
+static gboolean button_press_event(GtkWidget *widget, GdkEventButton *event );

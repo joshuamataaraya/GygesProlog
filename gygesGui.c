@@ -1,6 +1,8 @@
 #include "gygesGui.h"
 #include "gprolog.h"
 
+
+
 //int initGui( int   argc, char *argv[] )
 int main(int argc, char *argv[])
 {
@@ -12,22 +14,18 @@ int main(int argc, char *argv[])
    	getcwd(path, sizeof(path));
 	strcat(path, "/img/");
 
-    //LOAD GUI
+  //LOAD GUI
 	gtk_init(&argc, &argv);
    	createWindow();
 
 	loadLayout();
 
-    //close on exit
-    g_signal_connect_swapped(G_OBJECT(window), "destroy",
-        G_CALLBACK(gtk_main_quit), NULL);
+  //close on exit
+  g_signal_connect_swapped(G_OBJECT(window), "destroy",
+      G_CALLBACK(gtk_main_quit), NULL);
 
-		// gtk_signal_connect (GTK_OBJECT (window), "button_press_event",
-    //           (GtkSignalFunc) button_press_event, NULL);
-
-
-
-
+	 gtk_signal_connect (GTK_OBJECT (window), "button_press_event",
+             (GtkSignalFunc) button_press_event, NULL);
 
     gtk_main ();
 
@@ -153,39 +151,6 @@ void deletePiece(){
     }
 }
 
-//when a mouse button is pressed
-static gboolean
-button_press_event(GtkWidget *widget, GdkEventButton *event )
-{
-  if (event->button == 1 && event->y <=800
-            && event-> x <= 800){
-    int x = event->x / 100 + 1;
-    int y = abs(event->y / 100 - 9);
-    //get the bit position
-    int position = x+((y-1)*8);
-    if(!pieceSelected){
-        pieceSelected = position;  //select the piece to move
-        //add hightlight image
-        int imgx = (((position-1)%8) * 100);
-        int imgy = (abs(((position-1)/8)-7) * 100);
-        loadLayout();
-        strcpy(tempPath, path);
-        image = gtk_image_new_from_file(strcat(tempPath, "highlight.png"));
-        gtk_layout_put(GTK_LAYOUT(layout), image, imgx, imgy);
-        gtk_widget_show_all(window);
-    }else{
-        if(position == pieceSelected){
-            pieceSelected = 0;
-            loadLayout();
-        }else
-            movePiece(position);
-    }
-
-  }
-  return TRUE;
-}
-
-
 //do a move
 void move(){
     loadLayout();
@@ -264,4 +229,35 @@ void addPiecesGui(){
         }
     }
     gtk_widget_show_all(layout);
+}
+static gboolean
+button_press_event(GtkWidget *widget, GdkEventButton *event )
+{
+	printf("%f %f\n",event->x,event->y );
+  // if (event->button == 1 && event->y <=800
+  //           && event-> x <= 800){
+  //   int x = event->x / 100 + 1;
+  //   int y = abs(event->y / 100 - 9);
+  //   //get the bit position
+  //   int position = x+((y-1)*8);
+  //   if(!pieceSelected){
+  //       pieceSelected = position;  //select the piece to move
+  //       //add hightlight image
+  //       int imgx = (((position-1)%8) * 100);
+  //       int imgy = (abs(((position-1)/8)-7) * 100);
+  //       loadLayout();
+  //       strcpy(tempPath, path);
+  //       image = gtk_image_new_from_file(strcat(tempPath, "highlight.png"));
+  //       gtk_layout_put(GTK_LAYOUT(layout), image, imgx, imgy);
+  //       gtk_widget_show_all(window);
+  //   }else{
+  //       if(position == pieceSelected){
+  //           pieceSelected = 0;
+  //           loadLayout();
+  //       }else
+  //           movePiece(position);
+  //   }
+	//
+  // }
+  return TRUE;
 }

@@ -46,12 +46,14 @@ boardList([_,_,Y],Y).
 
 gyges(Y,Board,Player):-
     write('Before Move'),nl,
-    printBoard([_,play,Board]),
+    %printBoard([_,play,Board]),
     %edit this number to change player
+    write(Board),nl,
     bestMove([Player,_,Board], AfterMove),
     write('After Move'),nl,
-    printBoard(AfterMove),
-    boardList(AfterMove,Y).
+
+    boardList(AfterMove,Y),
+    write(Y).
 
 %a test board
 testBoard([ A,B,C,D,E,F,

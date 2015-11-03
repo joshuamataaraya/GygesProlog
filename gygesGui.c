@@ -16,14 +16,18 @@ int main(int argc, char *argv[])
 
 	PlTerm list = arg[0];
 	char piece;
+	char res[List_Length(arg[0])];
 	for(i = 0; i< List_Length(arg[0]);i++){
 		sol = Rd_List(list);
 		piece = Rd_Char(*sol);
-		if(piece != BLANK)
+		if(piece != BLANK){
 			piece += '0';
+		}
 		printf("%c\t%d\n",piece,i);
+		board[i]=piece;
 		list = sol[1];
 	}
+	printf("%s",res);
 	Pl_Query_End(PL_RECOVER);
 	Stop_Prolog();
 
@@ -198,63 +202,27 @@ void addPiecesGui(){
     int i, j;
 
 	//clear the board first
-    for(i = 0; i<64; i++){
-        board[i] = 0;
-    }
+    // for(i = 0; i<36; i++){
+    //     board[i] = 0;
+    // }
 
   //add images for each piece on board
-  for(i = 0; i<64; i++){
+  for(i = 0; i<36; i++){
   	int position = i;
-  	int x = ((i%8) * 100) + 20;
-  	int y = (abs((i/8)-7) * 100) + 20;
+  	int x = ((i%6) * 100) + 75;
+  	int y = (i/6 * 100) + 75;
   	strcpy(tempPath, path);
         switch(board[i]){
-          case 1:
-              image = gtk_image_new_from_file(strcat(tempPath, "wpawn.png"));
+          case '1':
+              image = gtk_image_new_from_file(strcat(tempPath, "1lvlpiece.png"));
               gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
               break;
-          case 2:
-              image = gtk_image_new_from_file(strcat(tempPath, "wbishop.png"));
+          case '2':
+              image = gtk_image_new_from_file(strcat(tempPath, "2lvlpiece.png"));
               gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
  	         break;
-        	case 3:
-                image = gtk_image_new_from_file(strcat(tempPath, "wknight.png"));
-                gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-        	    break;
-        	case 4:
-                image = gtk_image_new_from_file(strcat(tempPath, "wrook.png"));
-                gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-        	    break;
-        	case 5:
-                image = gtk_image_new_from_file(strcat(tempPath, "wqueen.png"));
-                gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-        	    break;
-        	case 6:
-                image = gtk_image_new_from_file(strcat(tempPath, "wking.png"));
-                gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-        	    break;
-        	case 7:
-                image = gtk_image_new_from_file(strcat(tempPath, "bpawn.png"));
-                gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-        	    break;
-        	case 8:
-                image = gtk_image_new_from_file(strcat(tempPath, "bbishop.png"));
-                gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-        	    break;
-        	case 9:
-                image = gtk_image_new_from_file(strcat(tempPath, "bknight.png"));
-                gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-        	    break;
-        	case 10:
-                image = gtk_image_new_from_file(strcat(tempPath, "brook.png"));
-                gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-        	    break;
-        	case 11:
-                image = gtk_image_new_from_file(strcat(tempPath, "bqueen.png"));
-                gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-        	    break;
-        	case 12:
-                image = gtk_image_new_from_file(strcat(tempPath, "bking.png"));
+        	case '3':
+                image = gtk_image_new_from_file(strcat(tempPath, "3lvlpiece.png"));
                 gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
         	    break;
         }

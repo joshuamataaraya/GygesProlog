@@ -17,13 +17,12 @@ GtkEntry* entry;
 char path[1024]; //img folder path
 char tempPath[1024];
 int gameOver = 0;
-int pieceSelected = 0;
-
+int pieceSelected = -1;
 void addPiecesGui();
 static void addLabels();
 void createWindow();
 void loadLayout();
-void move();
+void movePiece(int position);
 void deletePiece();
 void siguienteJugada();
 static gboolean button_press_event(GtkWidget *widget, GdkEventButton *event );

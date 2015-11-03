@@ -32,8 +32,9 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void siguienteJugada(){
-	//Example Prolog call
+void siguienteJugada(int player){
+
+	//The player could be 1 or 2
 	WamWord arg[10];
 	int nbSol, i; i = nbSol = 0;
 	WamWord *sol;
@@ -67,7 +68,7 @@ void siguienteJugada(){
 	}
 
 	arg[0] = Mk_Variable();
-	arg[1] = Mk_Number(1);
+	arg[1] = Mk_Number(player);
 	arg[2] = Mk_Proper_List(36,list2);
 	Pl_Query_Call(Find_Atom("gyges"), 3, arg);
 
@@ -89,70 +90,7 @@ void siguienteJugada(){
 	Stop_Prolog();
 }
 
-void movePiece(int movPos){
-    //copy over current bitMaps to temp vars
-    long long selectedPiece = 0x1;
-    selectedPiece <<= (pieceSelected -1);
-    long long movPosition = 0x1;
-    movPosition <<= (movPos -1);
 
-    int doMove = 0;
-
-    long long guiPiece, buffer, *pieceMoveBoard;
-    int i, j;
-    //remove selected Piece
-    for(i = 0; i<12; i++){
-        //for bitmap of every piece type
-        if(buffer){//this bitmap has piece
-            doMove = 1;
-            break;
-        }
-    }
-
-    for(i = 0; i<12; i++){
-        //for bitmap of every piece type
-        if(buffer){//this bitmap has piece
-            break;
-        }
-    }
-
-    //do the move
-    if(doMove){
-        *pieceMoveBoard |= movPosition;
-        move();
-    }
-    pieceSelected = 0;
-}
-
-
-void deletePiece(){
-    //if piece selected delete it
-    if(pieceSelected){
-        //copy over current bitMaps to temp vars
-        long long selectedPiece = 0x1;
-        selectedPiece <<= (pieceSelected -1);
-
-        int doMove = 0;
-
-        long long guiPiece, buffer;
-        int i;
-        //remove selected Piece
-        for(i = 0; i<12; i++){
-            //for bitmap of every piece type
-            if(buffer){//this bitmap has piece
-                break;
-            }
-        }
-
-        pieceSelected = 0;
-        loadLayout();
-    }
-}
-
-//do a move
-void move(){
-    loadLayout();
-}
 
 
 
@@ -232,30 +170,36 @@ static gboolean
 button_press_event(GtkWidget *widget, GdkEventButton *event )
 {
 	printf("%f %f\n",event->x,event->y );
-  // if (event->button == 1 && event->y <=800
-  //           && event-> x <= 800){
-  //   int x = event->x / 100 + 1;
-  //   int y = abs(event->y / 100 - 9);
-  //   //get the bit position
-  //   int position = x+((y-1)*8);
-  //   if(!pieceSelected){
-  //       pieceSelected = position;  //select the piece to move
-  //       //add hightlight image
-  //       int imgx = (((position-1)%8) * 100);
-  //       int imgy = (abs(((position-1)/8)-7) * 100);
-  //       loadLayout();
-  //       strcpy(tempPath, path);
-  //       image = gtk_image_new_from_file(strcat(tempPath, "highlight.png"));
-  //       gtk_layout_put(GTK_LAYOUT(layout), image, imgx, imgy);
-  //       gtk_widget_show_all(window);
-  //   }else{
-  //       if(position == pieceSelected){
-  //           pieceSelected = 0;
-  //           loadLayout();
-  //       }else
-  //           movePiece(position);
-  //   }
-	//
-  // }
+  int x = event->x;
+  int y = event->y;
+
+	int position=(x-75)/100+((y-75)/100)*6;
+	printf("%d\n",position);
+
+
+  if(pieceSelected<0){
+		if(board[position]){
+			pieceSelected=position;
+			int imgx = ((position%6) * 100) + 75;
+			int imgy = (position/6 * 100) + 75;
+			loadLayout();
+			strcpy(tempPath, path);
+			image = gtk_image_new_from_file(strcat(tempPath, "highlight.png"));
+			gtk_layout_put(GTK_LAYOUT(layout), image, imgx, imgy);
+			gtk_widget_show_all(window);
+		}
+  }else{
+      if(position == pieceSelected){
+        loadLayout();
+      }else{
+				movePiece(position);
+			}
+      pieceSelected = -1;
+  }
   return TRUE;
+}
+void movePiece(int position){
+	board[position]=board[pieceSelected];
+	board[pieceSelected]=0; //to delete the piece
+	loadLayout();
 }

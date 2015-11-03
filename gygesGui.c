@@ -1,35 +1,12 @@
 #include "gygesGui.h"
-
+#include "gprolog.h"
 
 //int initGui( int   argc, char *argv[] )
 int main(int argc, char *argv[])
 {
-	//Example Prolog call
-	WamWord arg[10];
-	int nbSol, i; i = nbSol = 0;
-	WamWord *sol;
 
-  	Start_Prolog(argc, argv);
-  	Pl_Query_Begin(TRUE);
-	arg[0] = Mk_Variable();
-  	Pl_Query_Call(Find_Atom("gyges"), 1, arg);
-
-	PlTerm list = arg[0];
-	char piece;
-	char res[List_Length(arg[0])];
-	for(i = 0; i< List_Length(arg[0]);i++){
-		sol = Rd_List(list);
-		piece = Rd_Char(*sol);
-		if(piece != BLANK){
-			piece += '0';
-		}
-		printf("%c\t%d\n",piece,i);
-		board[i]=piece;
-		list = sol[1];
-	}
-	printf("%s",res);
-	Pl_Query_End(PL_RECOVER);
-	Stop_Prolog();
+	int jugador=1; //could be 1 or 2
+	siguienteJugada(jugador);
 
 	//get running dir put in swd
    	getcwd(path, sizeof(path));
@@ -51,6 +28,63 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+void siguienteJugada(){
+	//Example Prolog call
+	WamWord arg[10];
+	int nbSol, i; i = nbSol = 0;
+	WamWord *sol;
+
+	int argc;
+	char *argv[0];
+	Start_Prolog(argc, argv);
+	Pl_Query_Begin(TRUE);
+	arg[0]=Mk_Variable();
+	Pl_Query_Call(Find_Atom("testBoard"), 1, arg); //this is to initialize the board
+
+	PlTerm list = arg[0];
+	char piece;
+	for(i = 0; i< List_Length(arg[0]);i++){
+		sol = Rd_List(list);
+		piece = Rd_Char(*sol);
+		if(piece != BLANK){
+			piece += '0';
+		}
+		printf("%c\t%d\n",piece,i);
+		board[i]=piece;
+		list = sol[1];
+	}
+
+
+	PlTerm list2[36];
+	for(i=0; i<36;i++){
+		if(board[i]!=BLANK){
+			piece=board[i]-'0';
+		}
+		list2[i]= Mk_Char(piece);
+	}
+	arg[0] = Mk_Variable();
+	arg[1] = Mk_List(list2);
+	arg[2] = Mk_Number(1);
+	Pl_Query_Call(Find_Atom("gyges"), 3, arg);
+	printf("here\n");
+
+	list = arg[0];
+	char res[List_Length(arg[0])];
+	printf("%d\n",List_Length(arg[0]));
+	for(i = 0; i< List_Length(arg[0]);i++){
+		sol = Rd_List(list);
+		piece = Rd_Char(*sol);
+		if(piece != BLANK){
+			piece += '0';
+		}
+		printf("%c\t%d\n",piece,i);
+		board[i]=piece;
+		list = sol[1];
+	}
+	printf("%s",board);
+	Pl_Query_End(PL_RECOVER);
+	Stop_Prolog();
+}
 
 void movePiece(int movPos){
     //copy over current bitMaps to temp vars

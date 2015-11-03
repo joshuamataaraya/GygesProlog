@@ -8,7 +8,7 @@
 
 #define BLANK 'e'
 
-int board[36];
+char board[36];
 static GtkWidget *window;
 GtkWidget *layout;
 GtkWidget *image;
@@ -25,3 +25,4 @@ void createWindow();
 void loadLayout();
 void move();
 void deletePiece();
+void siguienteJugada();

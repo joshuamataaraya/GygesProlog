@@ -22,6 +22,12 @@ int main(int argc, char *argv[])
     g_signal_connect_swapped(G_OBJECT(window), "destroy",
         G_CALLBACK(gtk_main_quit), NULL);
 
+		// gtk_signal_connect (GTK_OBJECT (window), "button_press_event",
+    //           (GtkSignalFunc) button_press_event, NULL);
+
+
+
+
 
     gtk_main ();
 
@@ -234,11 +240,6 @@ void callback( GtkWidget *widget,
 //add pieces to board in gui from global bitmaps
 void addPiecesGui(){
     int i, j;
-
-	//clear the board first
-    // for(i = 0; i<36; i++){
-    //     board[i] = 0;
-    // }
 
   //add images for each piece on board
   for(i = 0; i<36; i++){

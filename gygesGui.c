@@ -7,8 +7,7 @@
 int main(int argc, char *argv[])
 {
 
-	int jugador=1; //could be 1 or 2
-	siguienteJugada(jugador);
+	initboard();
 
 	//get running dir put in swd
    	getcwd(path, sizeof(path));
@@ -31,10 +30,7 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-void siguienteJugada(int player){
-
-	//The player could be 1 or 2
+void initboard(){
 	WamWord arg[10];
 	int nbSol, i; i = nbSol = 0;
 	WamWord *sol;
@@ -43,9 +39,9 @@ void siguienteJugada(int player){
 	char *argv[0];
 	Start_Prolog(argc, argv);
 	Pl_Query_Begin(TRUE);
+
 	arg[0]=Mk_Variable();
 	Pl_Query_Call(Find_Atom("testBoard"), 1, arg); //this is to initialize the board
-	Pl_Query_End(PL_RECOVER);
 
 	PlTerm list = arg[0];
 	char piece;
@@ -59,6 +55,23 @@ void siguienteJugada(int player){
 		board[i]=piece;
 		list = sol[1];
 	}
+	Pl_Query_End(PL_RECOVER);
+	Stop_Prolog();
+
+}
+void siguienteJugada(){
+
+	//The player could be 1 or 2
+	WamWord arg[10];
+	int nbSol, i; i = nbSol = 0;
+	WamWord *sol;
+
+
+	PlTerm list = arg[0];
+	char piece;
+	int argc;
+	char *argv[0];
+	Start_Prolog(argc, argv);
 
 	Pl_Query_Begin(TRUE);
 	PlTerm list2[36];
@@ -68,7 +81,7 @@ void siguienteJugada(int player){
 	}
 
 	arg[0] = Mk_Variable();
-	arg[1] = Mk_Number(player);
+	arg[1] = Mk_Number(nextPlayer);
 	arg[2] = Mk_Proper_List(36,list2);
 	Pl_Query_Call(Find_Atom("gyges"), 3, arg);
 
@@ -86,6 +99,7 @@ void siguienteJugada(int player){
 		list = sol[1];
 	}
 
+	nextPlayer=nextPlayer==1?2:1;
 	Pl_Query_End(PL_RECOVER);
 	Stop_Prolog();
 }
@@ -103,7 +117,7 @@ void createWindow(){
 
     //set window size
     gtk_window_set_default_size(
-        GTK_WINDOW(window), 750, 750);
+        GTK_WINDOW(window), 1050, 750);
 
     layout = gtk_layout_new(NULL, NULL);
     gtk_container_add(GTK_CONTAINER (window), layout);
@@ -119,6 +133,13 @@ void loadLayout(){
     image = gtk_image_new_from_file(
         strcat(tempPath, "GygesBoard.png"));
     gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
+
+		strcpy(tempPath, path);
+		image2 = gtk_image_new_from_file(
+        strcat(tempPath, "play_button.png"));
+    gtk_layout_put(GTK_LAYOUT(layout), image2, 800, 100);
+
+
 
     //mouse listener
     gtk_widget_set_events (window,GDK_BUTTON_PRESS_MASK);
@@ -176,9 +197,22 @@ button_press_event(GtkWidget *widget, GdkEventButton *event )
 	int position=(x-75)/100+((y-75)/100)*6;
 	printf("%d\n",position);
 
+	if(x>75 && y>75 && x<675 && y<675){ //piece selected
+		movePiece(position);
+	}else{
+		pieceSelected = -1;
+		if(x>800 && x<900 && y>100 && y<200){ //play_button selected
+			siguienteJugada();
+			loadLayout();
+		}
+	}
 
-  if(pieceSelected<0){
-		if(board[position]){
+
+  return TRUE;
+}
+void movePiece(int position){
+	if(pieceSelected<0){
+		if(board[position]!=BLANK){
 			pieceSelected=position;
 			int imgx = ((position%6) * 100) + 75;
 			int imgy = (position/6 * 100) + 75;
@@ -192,14 +226,10 @@ button_press_event(GtkWidget *widget, GdkEventButton *event )
       if(position == pieceSelected){
         loadLayout();
       }else{
-				movePiece(position);
+				board[position]=board[pieceSelected];
+				board[pieceSelected]=0; //to delete the piece
+				loadLayout();
 			}
       pieceSelected = -1;
   }
-  return TRUE;
-}
-void movePiece(int position){
-	board[position]=board[pieceSelected];
-	board[pieceSelected]=0; //to delete the piece
-	loadLayout();
 }

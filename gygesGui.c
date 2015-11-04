@@ -82,8 +82,9 @@ void siguienteJugada(){
 
 	arg[0] = Mk_Variable();
 	arg[1] = Mk_Number(nextPlayer);
-	arg[2] = Mk_Proper_List(36,list2);
-	Pl_Query_Call(Find_Atom("gyges"), 3, arg);
+	arg[2] = Mk_Variable();
+	arg[3] = Mk_Proper_List(36,list2);
+	Pl_Query_Call(Find_Atom("gyges"), 4, arg);
 
 	list = arg[0];
 	int length = List_Length(arg[0]);
@@ -98,7 +99,7 @@ void siguienteJugada(){
 		board[i]=piece;
 		list = sol[1];
 	}
-
+	gameOver= Rd_Char(arg[2])=='w'?1:0;
 	nextPlayer=nextPlayer==1?2:1;
 	Pl_Query_End(PL_RECOVER);
 	Stop_Prolog();
@@ -135,20 +136,40 @@ void loadLayout(){
     gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
 
 		strcpy(tempPath, path);
-		image2 = gtk_image_new_from_file(
+		image = gtk_image_new_from_file(
         strcat(tempPath, "play_button.png"));
-    gtk_layout_put(GTK_LAYOUT(layout), image2, 800, 100);
+    gtk_layout_put(GTK_LAYOUT(layout), image, 800, 100);
 
-
-
-    //mouse listener
-    gtk_widget_set_events (window,GDK_BUTTON_PRESS_MASK);
-
-
-    gtk_widget_show(layout);
-    gtk_widget_show_all(window);
-
-    addPiecesGui();
+		strcpy(tempPath, path);
+		if(nextPlayer==1){
+			image = gtk_image_new_from_file(
+					strcat(tempPath, "infierno.jpg"));
+		}else{
+			image = gtk_image_new_from_file(
+					strcat(tempPath, "cielo.jpeg"));
+		}
+		gtk_layout_put(GTK_LAYOUT(layout), image, 900, 100);
+		if(gameOver){
+			strcpy(tempPath, path);
+			if(nextPlayer==1){
+				image = gtk_image_new_from_file(
+						strcat(tempPath, "cieloWon.jpg"));
+			}else{
+				image = gtk_image_new_from_file(
+						strcat(tempPath,"infiernoWon.jpg"));
+			}
+			gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
+			//mouse listener
+	    gtk_widget_set_events (window,GDK_BUTTON_PRESS_MASK);
+	    gtk_widget_show(layout);
+	    gtk_widget_show_all(window);
+		}else{
+    	//mouse listener
+	    gtk_widget_set_events (window,GDK_BUTTON_PRESS_MASK);
+	    gtk_widget_show(layout);
+	    gtk_widget_show_all(window);
+	    addPiecesGui();
+		}
 }
 
 void callback( GtkWidget *widget,
@@ -204,10 +225,20 @@ button_press_event(GtkWidget *widget, GdkEventButton *event )
 		if(x>800 && x<900 && y>100 && y<200){ //play_button selected
 			siguienteJugada();
 			loadLayout();
+		}else if(x>350 && x<400 && y>25 && y<75 &&
+			nextPlayer==1){ //gano el infierno
+				//its needed to check if the player is available to do this movement
+			gameOver=1;
+			nextPlayer=2;
+			loadLayout();
+		}else if(x>350	 && x<400 && y>675 && y<725 &&
+			nextPlayer==2){ //gano el infierno
+				//its needed to check if the player is available to do this movement
+			gameOver=1;
+			nextPlayer=1;
+			loadLayout();
 		}
 	}
-
-
   return TRUE;
 }
 void movePiece(int position){
@@ -227,7 +258,9 @@ void movePiece(int position){
         loadLayout();
       }else{
 				board[position]=board[pieceSelected];
-				board[pieceSelected]=0; //to delete the piece
+				printf("Piece: %d\n", pieceSelected );
+				board[pieceSelected]=BLANK; //to delete the piece
+				nextPlayer=nextPlayer==1?2:1;
 				loadLayout();
 			}
       pieceSelected = -1;

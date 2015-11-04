@@ -340,7 +340,7 @@ playOption(N, N1,3,Board):- %down right case 2
   Middle2 is N + 7,
   selectEle(e,Middle,Board),
   selectEle(e,Middle2,Board).
-playOption(N, N1,3,Board,Board):- %down left
+playOption(N, N1,3,Board):- %down left
   Mod is N mod 6,
   Mod > 1,
   N1 is N + 4,
@@ -348,7 +348,7 @@ playOption(N, N1,3,Board,Board):- %down left
   Middle2 is N - 2,
   selectEle(e,Middle,Board),
   selectEle(e,Middle2,Board).
-playOption(N, N1,3,Board,Board):- %down left case 2
+playOption(N, N1,3,Board):- %down left case 2
   Mod is N mod 6,
   Mod > 1,
   N1 is N + 4,

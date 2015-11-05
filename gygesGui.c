@@ -2,7 +2,6 @@
 #include "gprolog.h"
 
 
-
 //int initGui( int   argc, char *argv[] )
 int main(int argc, char *argv[])
 {
@@ -66,7 +65,6 @@ void siguienteJugada(){
 	int nbSol, i; i = nbSol = 0;
 	WamWord *sol;
 
-
 	PlTerm list = arg[0];
 	char piece;
 	int argc;
@@ -99,7 +97,9 @@ void siguienteJugada(){
 		board[i]=piece;
 		list = sol[1];
 	}
+
 	gameOver= Rd_Char(arg[2])=='w'?1:0;
+	//printf("C in %s\n",gameOver);
 	nextPlayer=nextPlayer==1?2:1;
 	Pl_Query_End(PL_RECOVER);
 	Stop_Prolog();

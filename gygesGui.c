@@ -30,6 +30,74 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+int isAvailable(int piece){
+	struct myPiece res[6];
+	posibleMovements(res);
+	int i;
+	int position;
+	for(i=0;i<6;i++){
+		position=((res[i].pos/10)-1)*6;
+		position+=(res[i].pos%10);
+		position-=1;
+		if (position==piece){
+			return 1;
+		}
+	}
+	return 0;
+}
+void posibleMovements(struct myPiece res[]){
+	WamWord arg[10];
+	int nbSol, i; i = nbSol = 0;
+	WamWord *sol;
+	WamWord *subList;
+	WamWord *subList2;
+
+	PlTerm list;
+	PlTerm list3;
+	int argc;
+	char *argv[0];
+	Start_Prolog(argc, argv);
+
+	Pl_Query_Begin(TRUE);
+	PlTerm list2[36];
+	for(i=0; i<36;i++){
+		list2[i] = board[i] == BLANK ?
+			Mk_Integer(0) : Mk_Integer(board[i] - '0');
+	}
+
+	arg[0] = Mk_Proper_List(36,list2);
+	if(nextPlayer==1){
+		arg[1] = Mk_Char('i');
+	}else{
+		arg[1] = Mk_Char('c');
+	}
+	arg[2] = Mk_Variable();
+	Pl_Query_Call(Find_Atom("posiblesFichas"), 3, arg);
+
+	list = arg[2];
+	int length = List_Length(arg[2]);
+	struct myPiece piece;
+	char pieceTemp;
+	for(i = 0; i< List_Length(arg[2]);i++){
+		sol = Rd_List(list);
+		subList = Rd_List(sol);
+		piece.p = Rd_Char(*subList);
+		if(!piece.p - '0'){
+			piece.p += '0';
+		}else{
+			piece.p=BLANK;
+		}
+		list3 = subList[1];
+		subList = Rd_List(list3);
+
+		piece.pos = Rd_Integer(*subList);
+		printf("piece: %c pos: %d\n",piece.p,piece.pos);
+		res[i]=piece;
+		list = sol[1];
+	}
+	Pl_Query_End(PL_RECOVER);
+	Stop_Prolog();
+}
 void initboard(){
 	WamWord arg[10];
 	int nbSol, i; i = nbSol = 0;
@@ -51,7 +119,6 @@ void initboard(){
 		if(piece != BLANK){
 			piece += '0';
 		}
-		printf("%c\t%d\n",piece,i);
 		board[i]=piece;
 		list = sol[1];
 	}
@@ -62,6 +129,7 @@ void initboard(){
 void siguienteJugada(){
 
 	//The player could be 1 or 2
+
 	WamWord arg[10];
 	int nbSol, i; i = nbSol = 0;
 	WamWord *sol;
@@ -243,7 +311,7 @@ button_press_event(GtkWidget *widget, GdkEventButton *event )
 }
 void movePiece(int position){
 	if(pieceSelected<0){
-		if(board[position]!=BLANK){
+		if(board[position]!=BLANK && isAvailable(position)){
 			pieceSelected=position;
 			int imgx = ((position%6) * 100) + 75;
 			int imgy = (position/6 * 100) + 75;

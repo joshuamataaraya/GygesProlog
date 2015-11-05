@@ -8,6 +8,11 @@
 
 #define BLANK 'e'
 
+struct myPiece{
+  char p;
+  int pos;
+};
+
 char board[36];
 static GtkWidget *window;
 GtkWidget *layout;
@@ -29,3 +34,5 @@ void deletePiece();
 void siguienteJugada();
 static gboolean button_press_event(GtkWidget *widget, GdkEventButton *event );
 void initboard();
+void posibleMovements(struct myPiece res[]);
+int isAvailable(int piece);

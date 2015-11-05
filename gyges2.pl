@@ -41,7 +41,9 @@ tabla(X,Format):-
   */
   elemArriba(_, [Elem,Pos],[Elem2,Pos2],Jugador):-
     Jugador = i,
-    between(11,16,Pos),
+    11 @=< Pos,
+    %between(11,16,Pos),
+    16@>=Pos,
     Elem2 =Elem,
     Pos2 = -1.
 
@@ -56,7 +58,9 @@ tabla(X,Format):-
   */
   elemAbajo(_, [Elem,Pos],[Elem2,Pos2],Jugador):-
     Jugador = c,
-    between(61,66,Pos),
+    61@=<Pos,
+    66@>=Pos,
+    %between(61,66,Pos),
     Elem2 =Elem,
     Pos2 = -1.
 
@@ -91,23 +95,23 @@ tabla(X,Format):-
 
   analizaPosibles(_,[],ListaVieja,Inserted,_,_,_):-Inserted=ListaVieja.
   analizaPosibles(Tabla,[[Elem,Pos]|Cola],ListaVieja,Inserted,Restantes,Recorrido,Jugador):-
-    not(Elem=0), %ultimo movimiento y ya hay una ficha
+    \+(Elem=0), %ultimo movimiento y ya hay una ficha
     Restantes = 1,
-    not(member([Elem,Pos],Recorrido)), %se controla el recorrido para evitar ciclos infinitos
+    \+(member([Elem,Pos],Recorrido)), %se controla el recorrido para evitar ciclos infinitos
     append(Recorrido,[[Elem,Pos]],RecorridoNuevo),
     bagof([Elem3,PosFinal],elemsAlLado(Tabla,[Elem,Pos],[Elem3,PosFinal],Jugador),AlLado),
     analizaPosibles(Tabla,AlLado,ListaVieja,Posibles,Elem,RecorridoNuevo,Jugador),
     analizaPosibles(Tabla,Cola,Posibles,Inserted,Restantes,RecorridoNuevo,Jugador);
     Elem=0, %ultimo movimiento y no hay ficha
     Restantes = 1,
-    not(member([Elem,Pos],ListaVieja)),
+    \+(member([Elem,Pos],ListaVieja)),
     append(ListaVieja,[[Elem,Pos]],ListaNueva),
-    not(member([Elem,Pos],Recorrido)),
+    \+(member([Elem,Pos],Recorrido)),
     analizaPosibles(Tabla,Cola,ListaNueva,Inserted,Restantes,Recorrido,Jugador);
     Elem=0, % no es el ultimo movimiento
     Restantes >1,
     RestantesAux is Restantes-1,
-    not(member([Elem,Pos],Recorrido)),
+    \+(member([Elem,Pos],Recorrido)),
     append(Recorrido,[[Elem,Pos]],RecorridoNuevo),
     bagof([Elem3,PosFinal],elemsAlLado(Tabla,[Elem,Pos],[Elem3,PosFinal],Jugador),AlLado),
     analizaPosibles(Tabla,AlLado,ListaVieja,Posibles,RestantesAux,RecorridoNuevo,Jugador),
@@ -132,7 +136,7 @@ tabla(X,Format):-
     FilaNueva is Fila-1.
 
   posiblesFichasAux(_,_,FichasAux,_,0,Fichas):-
-    not(FichasAux = []),
+    \+(FichasAux = []),
     Fichas = FichasAux.
   posiblesFichasAux([[Elem|Pos]|Cola],Jugador,FichasAux,Fila,0,Fichas):-
     FichasAux = [],
@@ -153,11 +157,13 @@ tabla(X,Format):-
     RELACION QUE PERMITE VER TODAS LAS FICHAS DE UN JUGADOR
   */
   posiblesFichas(Tabla,Jugador,Fichas):-
+    tabla(Tabla,TablaF),
     Jugador = c,
-    posiblesFichasAux(Tabla,Jugador,[],1,6,Fichas).
+    posiblesFichasAux(TablaF,Jugador,[],1,6,Fichas).
   posiblesFichas(Tabla,Jugador,Fichas):-
+    tabla(Tabla,TablaF),
     Jugador = i,
-    reverse(Tabla,TablaAux),
+    reverse(TablaF,TablaAux),
     posiblesFichasAux(TablaAux,Jugador,[],6,6,Fichas).
 
   jugadasDeUnJugadorAux(_,_,Jugadas,[],JugadasAux):-Jugadas=JugadasAux.
@@ -208,15 +214,17 @@ tabla(X,Format):-
   Si el algoritmo puede ganar, lo hace, si no puede, da una solucion aleatoria.
 */
   mejorJugada(Tabla,TablaFinal,PosicionIncial,PosicionFinal,Jugador):-
-    jugadasDeUnJugador(Tabla,Jugador,Jugadas),
-    asignarPuntajes(Tabla,Jugador,Jugadas,0,ElemPos1,ElemPos2),
-    moverFicha(Tabla,ElemPos1,ElemPos2,TablaFinal),
+    tabla(Tabla,TablaF),
+    jugadasDeUnJugador(TablaF,Jugador,Jugadas),
+    asignarPuntajes(TablaF,Jugador,Jugadas,0,ElemPos1,ElemPos2),
+    moverFicha(TablaF,ElemPos1,ElemPos2,TablaFinal),
     PosicionIncial=ElemPos1,
     PosicionFinal=ElemPos2;
-    jugadasDeUnJugador(Tabla,Jugador,[[Elem,[[JugadaElem,JugadaPos]|_]]|_]),
+    tabla(Tabla,TablaF),
+    jugadasDeUnJugador(TablaF,Jugador,[[Elem,[[JugadaElem,JugadaPos]|_]]|_]),
     ElemPos1=Elem,
     ElemPos2=[JugadaElem,JugadaPos],
-    moverFicha(Tabla,ElemPos1,ElemPos2,TablaFinal),
+    moverFicha(TablaF,ElemPos1,ElemPos2,TablaFinal),
     PosicionIncial=ElemPos1,
     PosicionFinal=ElemPos2.
 /*

@@ -8,7 +8,7 @@ TAREA: IA de Gyges
 
 Manual Usuario:
 +Este archivo tiene las reglas de juego y algoritmos minMax
--para las jugadas del ai. Para la realizacion de pruebas
+AI,-para las jugadas del ai. Para la realizacion de pruebas
 -se recomienda correr la relacion "gyges" este tomara la tabla
 -"testBoard" y lo relacionara con el jugador 1 o 2
 -indicado en linea 50 y asi buscara la mejor jugada. Entonces
@@ -28,8 +28,6 @@ realizados en C cuando se realiza la segunda parte de esta tarea.
 
 *******************************/
 
-
-
 %predicates
 /*
   start a game with an board.
@@ -42,17 +40,17 @@ realizados en C cuando se realiza la segunda parte de esta tarea.
     1 is first player
     2 is second player
 */
-boardList([_,_,Y],Y).
+boardList([_,X,Y],Y,X).
 
 gyges(Y,Player,NextState,Board):-
     write('Before Move'),nl,
-    %printBoard([_,play,Board]),
     %edit this number to change player
     write(Board),nl,
-    bestMove([Player,NextState,Board], AfterMove),
+    bestMove(Player,[Player,_,Board], AfterMove),
     write('After Move'),nl,
-    boardList(AfterMove,Y),
-    write(Y).
+    write(AfterMove),
+    boardList(AfterMove,Y,NextState),
+    write(NextState).
 
 %a test board
 testBoard([ A,B,C,D,E,F,
@@ -68,30 +66,29 @@ aiRow([3,1,2,1,2,3]).
 %which side of board each player is on (North/South)
 heaven(2).
 hell(1).
+
 %what player are we?
-aiPlayer(1). %this needs to bet set dinamically from C gui
 nextPlayer(1,2).
 nextPlayer(2,1).
 
 %the current player is max and next min
-maxMove([P,_,_]):- aiPlayer(P).
-minMov([P,_,_]):- aiPlayer(X),nextPlayer(X,P).
+maxMove(AI,[AI,_,_]).
+minMov(AI,[P,_,_]).
 
 %game states score respectively base on last move
-score([P, won, _], -2):- aiPlayer(X),nextPlayer(X,P).
-score([P, won, _], 2):- aiPlayer(P).
+score(AI,[P, won, _], -2).
+score(AI,[AI, won, _], 2).
 %give a small score for moving, we always have to move
-score([P, play, _], -1):- aiPlayer(X),nextPlayer(X,P).
-score([P, play, _], 1):- aiPlayer(P).
+score(_,[P, play, _], -10).
 
 %indexes that signify a win
-winningSLot(P,S):- hell(P), S < 0, S > -6.
-winningSLot(P,S):- heaven(P), S > 35, S < 40.
+winningSLot(P,S):- hell(P), S < 0,S > -6.
+winningSLot(P,S):- heaven(P),S > 35, S < 41.
 
 %Moves, use prolog backtracking to solve for win
-move([Player1, play, Board], [Player2, won, _]) :-
+move([Player1, play, Board], [Player1, won, _]) :-
     nextPlayer(Player1,Player2),
-    moveAux(Player1, won, _ , Board, _), !.
+    moveAux(Player1, won, _ , Board, _).
 
 move([Player1, play, Board], [Player2, play, NextBoard]) :-
     nextPlayer(Player1,Player2),
@@ -102,13 +99,13 @@ moveAux(P,State,Pos,Board,NextBoard):-
     var(Pos),
     loopPieces(P, State,Board,NextBoard).
 %victory condition
-moveAux(P, won, Pos, Board ,_):- %position that can obtain victory
+moveAux(P, won, Pos, Board, _ ):- %position that can obtain victory
     \+ var(Pos),
     selectEle(CurEle, Pos, Board),
     playOption(Pos,N1,CurEle,Board),
     winningSLot(P,N1). %if landed in south or north winning slot
 
-moveAux(_, play , Pos, Board,AfterMove):-
+moveAux(P, play , Pos, Board,AfterMove):-
     \+ var(Pos),
     selectEle(CurEle, Pos, Board),
     \+ CurEle = e,
@@ -173,16 +170,16 @@ firstSouthRowAux([H|T],Pos,Count):-
     firstSouthRowAux(T, Pos,Count1).
 
 %when piece skipping
-moveOnPieceAux(_,play,Piece, Pos, Board, AfterMove):-
+moveOnPieceAux(P,play,Piece, Pos, Board, AfterMove):-
     selectEle(e, Pos, Board),%if after we skip it is blank
     updateEle(Piece, Pos, Board, AfterMove).
-moveOnPieceAux(P,play,Piece, Pos, Board, AfterMove):-
+moveOnPieceAux(P,State,Piece, Pos, Board, AfterMove):-
     selectEle(LandedPiece, Pos, Board),%if not blank
     \+ LandedPiece = e,
     playOption(Pos, Skip, LandedPiece, Board),
     movingCorrectDir(P,Skip,Pos),
-    moveOnPieceAux(P,_,Piece, Skip, Board, AfterMove).
-moveOnPieceAux(P,won,_, Pos, _, _,_):-
+    moveOnPieceAux(P,State,Piece, Skip, Board, AfterMove),!.
+moveOnPieceAux(P, won ,_, Pos, _, _):-
     winningSLot(P,Pos).
 %loops var so we don't get stuck in a pice skipping loop
 moveOnPiece(P,State,Piece, Pos, Board, AfterMove, LastPlace):-
@@ -191,10 +188,10 @@ moveOnPiece(P,State,Piece, Pos, Board, AfterMove, LastPlace):-
 
 
 movingCorrectDir(P,Skip,Pos):-
-  Skip // 6 < Pos // 6,
+  (Skip // 6) < (Pos // 6),
   hell(P).
 movingCorrectDir(P,Skip,Pos):-
-  Skip // 6 > Pos // 6,
+  (Skip // 6) > (Pos // 6),
   heaven(P).
 
 %our posible moves in the list
@@ -240,12 +237,7 @@ playOption(N, N1,3,Board):-
   Middle2 is N + 12,
   selectEle(e,Middle, Board),
   selectEle(e,Middle2, Board).
-playOption(N, N1,3,Board):-
-  N1 is N - 18,
-  Middle is N - 6,
-  Middle2 is N - 12,
-  selectEle(e,Middle, Board),
-  selectEle(e,Middle2, Board).
+
 
 %L shaped moves
 %2 lvl down
@@ -291,7 +283,7 @@ playOption(N, N1,2,Board):-
   Middle is N - 6,
   selectEle(e,Middle,Board).
 
-%3 lvl piece only L move
+
 playOption(N, N1,3,Board):- %up right
   Mod is N mod 6,
   Mod < 4,
@@ -357,44 +349,52 @@ playOption(N, N1,3,Board):- %down left case 2
   selectEle(e,Middle,Board),
   selectEle(e,Middle2,Board).
 
+  playOption(N, N1,3,Board):-
+    N1 is N - 18,
+    Middle is N - 6,
+    Middle2 is N - 12,
+    selectEle(e,Middle, Board),
+    selectEle(e,Middle2, Board).
+
 /*
   Min Max
 */
 depth(X):- X < 2. %change this to change tree depth
 
-minMax(Pos, BestNextPos, Val,Depth) :-
+minMax(AI,Pos, BestNextPos, Val,Depth) :-
     %all posible board moves
     bagof(NextPos, move(Pos, NextPos), NextPosList),
     %pick the move that can lead to win
-    best(NextPosList, BestNextPos, Val,Depth), !.
+    best(AI,NextPosList, BestNextPos, Val,Depth), !.
+
 %no next move
-minMax(Pos, _, Val, _) :-
-    score(Pos, Val).
+minMax(AI,Pos, _, Val, _):-
+    score(AI,Pos, Val).
 
 %pick the best scored move from the list of boards
-best([Pos], Pos, Val,Depth) :-
+best(AI,[Pos], Pos, Val,Depth) :-
     depth(Depth),
     N1 is Depth + 1,
-    minMax(Pos, _, Val, N1).
-best([Pos1 | PosList], BestPos, BestVal,Depth) :-
+    minMax(AI,Pos, _, Val, N1).
+best(AI,[Pos1 | PosList], BestPos, BestVal,Depth) :-
     depth(Depth),
     N1 is Depth + 1,
-    minMax(Pos1, _, Val1,N1),
-    best(PosList, Pos2, Val2,Depth),
-    betterOf(Pos1, Val1, Pos2, Val2, BestPos, BestVal).
+    minMax(AI,Pos1, _, Val1,N1),
+    best(AI,PosList, Pos2, Val2,Depth),
+    betterOf(AI,Pos1, Val1, Pos2, Val2, BestPos, BestVal).
 
 %compare move value
-betterOf(Pos0, Val0, _, Val1, Pos0, Val0) :-
-    minMov(Pos0),
+betterOf(AI,Pos0, Val0, _, Val1, Pos0, Val0):-
+    minMov(AI,Pos0),
     Val0 > Val1, !
     ;
-    maxMove(Pos0),
+    maxMove(AI,Pos0),
     Val0 < Val1, !.
-betterOf(_, _, Pos1, Val1, Pos1, Val1).
+betterOf(_,_, _, Pos1, Val1, Pos1, Val1).
 
 %given a game state get the best posible next state
-bestMove(GameState, NextState):-
-  minMax(GameState, NextState, _, 0). %last arg is tree depth
+bestMove(AI,GameState, NextState):-
+  minMax(AI,GameState, NextState, _, 0). %last arg is tree depth
 
 /*
   AUX Relations
